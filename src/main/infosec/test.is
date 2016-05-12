@@ -1,0 +1,15 @@
+fun test() : whatever {
+    var a : int = 3;
+    function(2+=3, 41);
+    lolcats();
+}
+
+fun test() : whatever {
+    var a : int = 3;
+}
+
+fun test() : whatever {
+    var a : int = 3;
+}
+
+rofl();
