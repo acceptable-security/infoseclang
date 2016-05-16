@@ -24,4 +24,8 @@ public class MethodRefConstant extends Constant {
 
         return out;
     }
+
+    public String toString() {
+        return "MethodRefConstant<" + class_index + ", " + name_and_type_index + ">";
+    }
 }

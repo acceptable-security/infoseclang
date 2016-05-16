@@ -23,4 +23,8 @@ public class InvokeDynamicConstant extends Constant {
 
         return out;
     }
+
+    public String toString() {
+        return "InvokeDynamicConstant<" + bootstrap_method_attr_index + ", " + name_and_type_index;
+    }
 }

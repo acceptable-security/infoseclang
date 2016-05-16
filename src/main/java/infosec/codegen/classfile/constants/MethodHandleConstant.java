@@ -23,4 +23,8 @@ public class MethodHandleConstant extends Constant {
 
         return out;
     }
+
+    public String toString() {
+        return "MethodHandleConstant<" + reference_kind + ", " + reference_index + ">";
+    }
 }

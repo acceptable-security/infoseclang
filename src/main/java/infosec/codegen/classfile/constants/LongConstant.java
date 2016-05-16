@@ -26,4 +26,8 @@ public class LongConstant extends Constant {
 
         return out;
     }
+
+    public String toString() {
+        return "LongConstant<" + value + ">";
+    }
 }

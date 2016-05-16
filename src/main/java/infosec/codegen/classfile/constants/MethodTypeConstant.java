@@ -20,4 +20,8 @@ public class MethodTypeConstant extends Constant {
 
         return out;
     }
+
+    public String toString() {
+        return "MethodTypeConstant<" + descriptor_index + ">";
+    }
 }

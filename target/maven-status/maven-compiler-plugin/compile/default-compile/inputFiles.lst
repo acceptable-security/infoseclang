@@ -33,6 +33,7 @@
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/codegen/classfile/constants/MethodRefConstant.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/codegen/classfile/attributes/SourceFileAttribute.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/codegen/classfile/constants/FieldRefConstant.java
+/Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/codegen/VirtualMethod.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/codegen/classfile/CodeException.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/codegen/classfile/AccessFlags.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/AST/Expression/StringExpression.java
@@ -42,14 +43,16 @@
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/AST/Block.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/parser/Parser.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/codegen/classfile/constants/InvokeDynamicConstant.java
+/Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/codegen/CodeGen.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/AST/Expression/InfixExpression.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/codegen/classfile/constants/MethodTypeConstant.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/AST/Statement/ExpressionStatement.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/codegen/OPCode.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/codegen/classfile/constants/Constant.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/lexer/token/Token.java
-/Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/codegen/Emitter.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/codegen/classfile/FieldInfo.java
+/Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/codegen/Emitter.java
+/Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/codegen/VirtualField.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/AST/Statement/ForStatement.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/lexer/token/NumberToken.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/codegen/classfile/attributes/ConstantValueAttribute.java

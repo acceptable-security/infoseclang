@@ -22,4 +22,8 @@ public class FloatConstant extends Constant {
 
         return out;
     }
+
+    public String toString() {
+        return "FloatConstant<" + value + ">";
+    }
 }

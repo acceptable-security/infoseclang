@@ -24,4 +24,8 @@ public class NameAndTypeConstant extends Constant {
 
         return out;
     }
+
+    public String toString() {
+        return "NameAndTypeConstant<" + name_index + ", " + type_index + ">";
+    }
 }

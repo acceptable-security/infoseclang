@@ -20,4 +20,8 @@ public class StringConstant extends Constant {
 
         return out;
     }
+
+    public String toString() {
+        return "StringConstant<" + string_index + ">";
+    }
 }

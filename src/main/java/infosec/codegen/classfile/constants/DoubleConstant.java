@@ -26,4 +26,8 @@ public class DoubleConstant extends Constant {
 
         return out;
     }
+
+    public String toString() {
+        return "DoubleConstant<" + value + ">";
+    }
 }

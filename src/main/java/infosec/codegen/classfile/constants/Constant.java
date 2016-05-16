@@ -8,4 +8,5 @@ public abstract class Constant {
     }
 
     public abstract byte[] toBytes();
+    public abstract String toString();
 }

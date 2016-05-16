@@ -20,4 +20,8 @@ public class ClassInfoConstant extends Constant {
 
         return out;
     }
+
+    public String toString() {
+        return "ClassInfo<" + name_index + ">";
+    }
 }

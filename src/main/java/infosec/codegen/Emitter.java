@@ -44,7 +44,8 @@ public class Emitter {
 
     public void emit(String code) throws IOException {
         byte[] bytes = code.getBytes("UTF-8");
-        emit((short) bytes.length);
+        System.out.println("Emitting : " + bytes);
+        emit((short) (bytes.length));
         emit(bytes);
     }
 

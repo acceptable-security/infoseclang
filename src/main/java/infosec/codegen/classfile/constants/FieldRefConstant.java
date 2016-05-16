@@ -24,4 +24,8 @@ public class FieldRefConstant extends Constant {
 
         return out;
     }
+
+    public String toString() {
+        return "FieldRefConstant<" + class_index + ", " + name_and_type_index + ">";
+    }
 }

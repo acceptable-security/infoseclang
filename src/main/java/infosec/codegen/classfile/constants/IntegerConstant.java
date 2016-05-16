@@ -22,4 +22,8 @@ public class IntegerConstant extends Constant {
 
         return out;
     }
+
+    public String toString() {
+        return "IntegerConstant<" + value + ">";
+    }
 }

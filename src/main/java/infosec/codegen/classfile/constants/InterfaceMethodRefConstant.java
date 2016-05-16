@@ -24,4 +24,8 @@ public class InterfaceMethodRefConstant extends Constant {
 
         return out;
     }
+
+    public String toString() {
+        return "InterfaceMethodRefConstant<" + class_index + ", " + name_and_type_index + ">";
+    }
 }
