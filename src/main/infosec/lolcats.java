@@ -1,5 +1,5 @@
 public class lolcats {
-    public void main(int argc, String[] argv) {
-
+    public static void main(String[] argv) {
+        System.out.println("Hello, World!");
     }
 }

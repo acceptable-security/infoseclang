@@ -62,6 +62,12 @@ public class VirtualMethod {
         this.byteCode.add(arg);
     }
 
+    public void addOperation(OPCode op, short arg) {
+        this.byteCode.add((byte) op.getOP());
+        this.byteCode.add((byte) ((arg >> 8) & 0xFF));
+        this.byteCode.add((byte) (arg & 0xFF));
+    }
+
     public void addOperation(OPCode op, byte arg, byte arg2) {
         this.byteCode.add((byte) op.getOP());
         this.byteCode.add(arg);

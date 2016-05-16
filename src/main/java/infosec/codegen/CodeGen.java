@@ -53,6 +53,10 @@ public class CodeGen {
         return this.classEmit.addConstant(new MethodRefConstant(classN, newNameAndType(name, type)));
     }
 
+    public short newFieldReference(short classN, String name, String type) {
+        return this.classEmit.addConstant(new FieldRefConstant(classN, newNameAndType(name, type)));
+    }
+
     public void storeMethod(MethodInfo method) {
         this.classEmit.addMethod(method);
     }
