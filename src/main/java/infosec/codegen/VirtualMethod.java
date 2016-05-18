@@ -14,6 +14,7 @@ public class VirtualMethod {
     private String ret_type;
     private boolean isPublic = true;
     private boolean isStatic = false;
+    private short variableCount = 0;
 
     public VirtualMethod(String name, String ret_type) {
         this.byteCode = new ArrayList<Byte>();
@@ -38,10 +39,12 @@ public class VirtualMethod {
     }
 
     public void addArg(String name, String type) {
+        variableCount++;
         this.args.add(new VirtualField(name, type));
     }
 
     public void addArg(String name, String type, int arrayDepth) {
+        variableCount++;
         this.args.add(new VirtualField(name, type, arrayDepth));
     }
 
@@ -72,6 +75,10 @@ public class VirtualMethod {
         this.byteCode.add((byte) op.getOP());
         this.byteCode.add(arg);
         this.byteCode.add(arg2);
+    }
+
+    public void addOperation(OPCode op, float arg) {
+
     }
 
     public void setPublic(boolean val) {
@@ -149,9 +156,13 @@ public class VirtualMethod {
         return bytes;
     }
 
-    public void compileTo(CodeGen codegen) {
-        MethodInfo method = new MethodInfo(codegen.storeString(name), codegen.storeString(getDescriptor()));
-        CodeAttribute code = new CodeAttribute(codegen.storeString("Code"), (short) 200, (short) 7); // TODO - Pick less arbitrary numbers
+    public short nextVariable() {
+        return variableCount++;
+    }
+
+    public void compileTo(CodeEmitter codegen) {
+        MethodInfo method = new MethodInfo(codegen.utf8(name), codegen.utf8(getDescriptor()));
+        CodeAttribute code = new CodeAttribute(codegen.utf8("Code"), (short) 200, variableCount); // TODO - Pick less arbitrary numbers
         code.setCode(byteCode());
         method.addAttribute(code);
 
@@ -169,6 +180,6 @@ public class VirtualMethod {
             method.removeFlag(AccessFlags.ACC_STATIC);
         }
 
-        codegen.storeMethod(method);
+        codegen.method(method);
     }
 }

@@ -70,8 +70,8 @@ public class VirtualField {
         return out;
     }
 
-    public void compileTo(CodeGen codegen) {
-        FieldInfo field = new FieldInfo(codegen.storeString(name), codegen.storeString(toString()));
-        codegen.storeField(field);
+    public void compileTo(CodeEmitter codegen) {
+        FieldInfo field = new FieldInfo(codegen.utf8(name), codegen.utf8(toString()));
+        codegen.field(field);
     }
 }

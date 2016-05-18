@@ -78,8 +78,16 @@ public class ClassEmitter extends Emitter {
         this.methods.add(method);
     }
 
+    public ArrayList<MethodInfo> getMethods() {
+        return methods;
+    }
+
+    public ArrayList<FieldInfo> getFields() {
+        return fields;
+    }
+
     public void debug(int level, String msg) {
-        if ( level >= debugLevel ) {
+        if ( debugLevel >= level ) {
             System.out.println("[DEBUG] " + msg);
         }
     }

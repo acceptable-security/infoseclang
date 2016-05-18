@@ -23,6 +23,14 @@ public class Block {
         return statements;
     }
 
+    public int getStatementCount() {
+        return statements.size();
+    }
+
+    public Statement getStatement(int statement) {
+        return statements.get(statement);
+    }
+
     public String toString() {
         String out = "{\n";
 

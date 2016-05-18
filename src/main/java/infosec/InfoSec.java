@@ -4,31 +4,35 @@ import infosec.lexer.*;
 import infosec.parser.*;
 import infosec.AST.Statement.*;
 import infosec.codegen.*;
+import infosec.codegen.Compiler;
 import infosec.codegen.classfile.*;
 
 
 public class InfoSec {
     public static void main(String[] argv) {
-        CodeGen cg = new CodeGen();
-
-        short str = cg.newString("Hello, World!");
-        short printstrm = cg.newFieldReference(cg.newClass("java/lang/System"), "out", "Ljava/io/PrintStream;");
-        short println = cg.newMethodReference(cg.newClass("java/io/PrintStream"), "println", "(Ljava/lang/String;)V");
-
-        cg.newClass("test", false);
-        cg.newClass("java/lang/Object", true);
-        cg.setSuper(true);
-        cg.setPublic(true);
-
-        VirtualMethod method = new VirtualMethod("main", "void");
-        method.addArg("argv", "java/lang/String", 1);
-        method.addOperation(OPCode.OP_getstatic,  printstrm);
-        method.addOperation(OPCode.OP_ldc, (byte) str);
-        method.addOperation(OPCode.OP_invokevirtual, println);
-        method.addOperation(OPCode.OP_return);
-        method.setStatic(true);
-        method.compileTo(cg);
-        cg.save("test.class");
+        Compiler c = new Compiler(argv[0]);
+        c.compileAll();
+        c.save();
+        c.close();
+        // CodeGen cg = new CodeGen("test");
+        //     // fun main(argv: test[]) : void
+        //     cg.startFunction("main", "void");
+        //     cg.addFunctionArgument("argv", "java/lang/String", 1);
+        //         // var test : str = "Hello World";
+        //         cg.storeStringVariable("test", "Hello World");
+        //
+        //         // test = "Hello!!!!";
+        //         cg.storeStringVariable("test", "Hello!!!!");
+        //
+        //         // System.out.println(test);
+        //         cg.startMethodCall("java/lang/System", "out", "java/io/PrintStream", "println", "(Ljava/lang/String;)V");
+        //             cg.pushVariable("test");
+        //         cg.endMethodCall();
+        //
+        //     // return;
+        //     cg.endFunction();
+        //
+        // cg.end();
 
 
         // Lexer lex = new Lexer(argv[0]);

@@ -1,13 +1,14 @@
 package infosec.AST.Statement;
 
+import infosec.AST.*;
 import infosec.AST.Expression.*;
 
 public class VariableDecStatement extends Statement {
     private String name;
-    private String type;
+    private Type type;
     private Expression value;
 
-    public VariableDecStatement(String name, String type, Expression value) {
+    public VariableDecStatement(String name, Type type, Expression value) {
         this.name = name;
         this.type = type;
         this.value = value;
@@ -17,7 +18,7 @@ public class VariableDecStatement extends Statement {
         return this.name;
     }
 
-    public String getType() {
+    public Type getType() {
         return this.type;
     }
 

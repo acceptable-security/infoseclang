@@ -1,5 +1,6 @@
 public class lolcats {
     public static void main(String[] argv) {
-        System.out.println("Hello, World!");
+        float test = 1.32f;
+        main(argv);
     }
 }

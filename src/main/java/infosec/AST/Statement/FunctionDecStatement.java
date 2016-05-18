@@ -6,9 +6,10 @@ import java.util.ArrayList;
 public class FunctionDecStatement extends Statement {
     public class FunctionArg {
         private String name;
-        private String type;
+        private Type type;
+        private int arrayDepth = 0;
 
-        public FunctionArg(String name, String type) {
+        public FunctionArg(String name, Type type) {
             this.name = name;
             this.type = type;
         }
@@ -17,27 +18,27 @@ public class FunctionDecStatement extends Statement {
             return name;
         }
 
-        public String getType() {
+        public Type getType() {
             return type;
         }
 
         public String toString() {
-            return name + " : " + type;
+            return getName() + " : " + getType();
         }
     }
 
     private String name;
-    private String retType;
+    private Type retType;
     private ArrayList<FunctionArg> args;
     private Block block;
 
     public FunctionDecStatement(String name) {
         this.name = name;
-        this.retType = "";
+        this.retType = null;
         this.args = new ArrayList<FunctionArg>();
     }
 
-    public FunctionDecStatement(String name, String retType) {
+    public FunctionDecStatement(String name, Type retType) {
         this.retType = retType;
         this.name = name;
         this.args = new ArrayList<FunctionArg>();
@@ -47,11 +48,11 @@ public class FunctionDecStatement extends Statement {
         this.block = block;
     }
 
-    public void addArg(String name, String type) {
+    public void addArg(String name, Type type) {
         this.args.add(new FunctionArg(name, type));
     }
 
-    public void setRetType(String retType) {
+    public void setRetType(Type retType) {
         this.retType = retType;
     }
 
@@ -59,12 +60,20 @@ public class FunctionDecStatement extends Statement {
         return name;
     }
 
-    public String getType() {
+    public Type getType() {
         return retType;
     }
 
     public ArrayList<FunctionArg> getArgs() {
         return args;
+    }
+
+    public int getArgCount() {
+        return args.size();
+    }
+
+    public FunctionArg getArg(int i) {
+        return args.get(i);
     }
 
     public Block getBlock() {

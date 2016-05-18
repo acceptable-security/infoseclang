@@ -13,7 +13,7 @@ public class Parser {
         new String[] {"<", ">", ">=", "<=", "==", "!=", "||", "&&"},
         new String[] {"+", "-"},
         new String[] {"*", "%", "/"},
-        new String[] {"<<", ">>", "&", "^", "|"},
+        new String[] {"<<<", "<<", ">>", ">>>", "&", "^", "|"},
         new String[] {"=", "+=", "-=", "*=", "/=", "&=", "^="}
     };
 
@@ -138,6 +138,28 @@ public class Parser {
         return tkn.value();
     }
 
+    public Type readType() {
+        String basicType = readName();
+
+        if ( basicType.equals("") ) {
+            System.out.println("Failed to read a name for a type.");
+            return null;
+        }
+
+        int arrayDepth = 0;
+
+        while ( matchSpecial("[") ) {
+            if ( !expectSpecial("]") ) {
+                System.out.println("Failed to match a [ with a ] in a type.");
+                return null;
+            }
+
+            arrayDepth++;
+        }
+
+        return new Type(basicType, arrayDepth);
+    }
+
     public Block readBlock() {
         if ( lexer.match("Special", "{") == null ) {
             return new Block(nextStatement());
@@ -220,10 +242,9 @@ public class Parser {
                     return null;
                 }
 
-                String type = readName();
+                Type type = readType();
 
-                if ( type.equals("") ) {
-                    System.out.println("var must be followed by a type.");
+                if ( type == null ) {
                     return null;
                 }
 
@@ -343,14 +364,13 @@ public class Parser {
                         return null;
                     }
 
-                    String argType = readName();
+                    Type type = readType();
 
-                    if ( argType.equals("") ) {
-                        System.out.println("Expected an argument type, got a " + lexer.current());
+                    if ( type == null ) {
                         return null;
                     }
 
-                    dec.addArg(argName, argType);
+                    dec.addArg(argName, type);
 
                     if ( !matchSpecial(",") ) {
                         break;
@@ -362,10 +382,9 @@ public class Parser {
                 }
 
                 if ( matchSpecial(":") ) {
-                    String fnRet = readName();
+                    Type fnRet = readType();
 
-                    if ( fnRet.equals("") ) {
-                        System.out.println("Expected a function return type, got a " + fnRet);
+                    if ( fnRet == null ) {
                         return null;
                     }
 
