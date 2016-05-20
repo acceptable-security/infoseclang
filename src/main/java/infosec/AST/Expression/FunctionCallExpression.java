@@ -19,6 +19,18 @@ public class FunctionCallExpression extends Expression {
         return this.args;
     }
 
+    public int getArgCount() {
+        return this.args.size();
+    }
+
+    public Expression getArg(int i) {
+        return this.args.get(i);
+    }
+
+    public String getName() {
+        return name;
+    }
+
     public String toString() {
         String out = name + "(";
 

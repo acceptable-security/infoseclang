@@ -1,6 +1,10 @@
 public class lolcats {
     public static void main(String[] argv) {
-        float test = 1.32f;
-        main(argv);
+        int a = 3;
+        int b = 4;
+
+        if ( a > b ) {
+            return;
+        }
     }
 }

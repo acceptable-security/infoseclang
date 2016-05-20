@@ -23,13 +23,17 @@ public class CodeGen {
     private String name;
     private HashMap<String, Short> variables;
     private HashMap<String, Type> varTypes;
+    private HashMap<String, String> functionType;
     private short currentCallField = -1;
     private short currentCallMethod = -1;
+    private short conditionBeforeSize;
+    private OPCode tmp;
 
     public CodeGen(String name) {
         this.name = name;
         this.variables = new HashMap<String, Short>();
         this.varTypes = new HashMap<String, Type>();
+        this.functionType = new HashMap<String, String>();
 
         this.emitter = new CodeEmitter();
         this.emitter.thisClass(name);
@@ -237,6 +241,57 @@ public class CodeGen {
         }
     }
 
+    public void startCondition(String op, String _type) {
+        Type type = typeFromString(_type);
+
+        switch ( type ) {
+            case INT:
+                if ( op.equals("==") ) {
+                    tmp = OPCode.OP_if_icmpne;
+                }
+                else if ( op.equals("!=") ) {
+                    tmp = OPCode.OP_if_icmpeq;
+                }
+                else if ( op.equals("<") ) {
+                    tmp = OPCode.OP_if_icmpge;
+                }
+                else if ( op.equals(">=") ) {
+                    tmp = OPCode.OP_if_icmplt;
+                }
+                else if ( op.equals(">") ) {
+                    tmp = OPCode.OP_if_icmple;
+                }
+                else if ( op.equals("<=") ) {
+                    tmp = OPCode.OP_if_icmpgt;
+                }
+                else {
+                    tmp = OPCode.OP_if_icmpne;
+                }
+                break;
+
+            case REF:
+                if ( op.equals("==") ) {
+                    tmp = OPCode.OP_if_acmpne;
+                }
+                else if ( op.equals("!=") ) {
+                    tmp = OPCode.OP_if_acmpeq;
+                }
+                else {
+                    tmp = OPCode.OP_ifnonnull;
+                }
+                break;
+        }
+
+        this.method.startBlock();
+        conditionBeforeSize = (short) this.method.getInternalBlockSize();
+    }
+
+    public void endCondition() {
+        short offset = (short) (3 + this.method.getInternalBlockSize() - conditionBeforeSize);
+        this.method.addRealOperation(tmp, offset);
+        this.method.endBlock();
+    }
+
     public void convert(String _from, String _to) {
         Type from = typeFromString(_from);
         Type to = typeFromString(_to);
@@ -288,6 +343,9 @@ public class CodeGen {
             method = null;
         }
 
+        this.variables = new HashMap<String, Short>();
+        this.varTypes = new HashMap<String, Type>();
+
         method = new VirtualMethod(name, type);
         method.setStatic(true);
     }
@@ -297,6 +355,9 @@ public class CodeGen {
             System.out.println("Attempted to start a function without first completing an older one. Discarding old one.");
             method = null;
         }
+
+        this.variables = new HashMap<String, Short>();
+        this.varTypes = new HashMap<String, Type>();
 
         method = new VirtualMethod(name, type, arrayDepth);
         method.setStatic(true);
@@ -309,6 +370,7 @@ public class CodeGen {
         }
 
         method.addArg(name, type);
+        storeArgVariable(name, type);
     }
 
     public void addFunctionArgument(String name, String type, int arrayDepth) {
@@ -342,6 +404,7 @@ public class CodeGen {
         }
 
         short local;
+
         Type type = typeFromString(_type);
 
         if ( this.variables.containsKey(name) ) {
@@ -361,6 +424,18 @@ public class CodeGen {
             case REF: method.addOperation(OPCode.OP_astore, (byte) local); break;
             default: return;
         }
+    }
+
+    public void storeArgVariable(String name, String _type) {
+        if ( method == null ) {
+            System.out.println("Attempted to load a variable while no function was loaded.");
+            return;
+        }
+
+        Type type = typeFromString(_type);
+        short local = (short) (this.method.getVariableCount() - 1);
+        this.variables.put(name, new Short(local));
+        this.varTypes.put(name, type);
     }
 
     public void startMethodCall(String object, String field, String fieldType, String method, String methodType) {
@@ -383,9 +458,73 @@ public class CodeGen {
         this.currentCallField = -1;
     }
 
+    public String getVariableType(String variable) {
+        if ( this.varTypes.containsKey(variable) ) {
+            switch ( this.varTypes.get(variable) ) {
+                case BYTE: return "byte";
+                case SHORT: return "short";
+                case INT: return "int";
+                case LONG: return "long";
+                case FLOAT: return "float";
+                case DOUBLE: return "double";
+                case CHAR: return "char";
+                case REF: return "Reference";
+            }
+        }
+
+        return "";
+    }
+
+    public String getFunctionType(String function) {
+        if ( this.functionType.containsKey(function) ) {
+            return this.functionType.get(function);
+        }
+
+        return "";
+    }
+
+    public void startFunctionCall(String method, String methodType) {
+        if ( this.currentCallMethod != -1 ) {
+            return;
+        }
+
+        this.currentCallMethod = this.emitter.methodReference(this.name, method, methodType);
+    }
+
+    public void endFunctionCall() {
+        if ( this.currentCallMethod == -1 ) {
+            return;
+        }
+
+        this.method.addOperation(OPCode.OP_invokestatic, this.currentCallMethod);
+        this.currentCallMethod = -1;
+    }
+
+    public void startExternalFunctionCall(String object, String field, String fieldType, String method, String methodType) {
+        if ( this.currentCallMethod != -1 ) {
+            return;
+        }
+
+        this.currentCallField = this.emitter.fieldReference(object, field, new VirtualField(field, fieldType).toString());
+        this.currentCallMethod = this.emitter.methodReference(fieldType, method, methodType);
+        this.method.addOperation(OPCode.OP_getstatic,  this.currentCallField);
+    }
+
+    public void endExternalFunctionCall() {
+        if ( this.currentCallMethod == -1 ) {
+            return;
+        }
+
+        this.method.addOperation(OPCode.OP_invokestatic, this.currentCallMethod);
+        this.currentCallMethod = -1;
+        this.currentCallField = -1;
+    }
+
     public void endFunction() {
         returnVoid();
         method.compileTo(this.emitter);
+        this.functionType.put(method.getName(), method.getDescriptor());
+        method = null;
     }
 
     public void returnVoid() {

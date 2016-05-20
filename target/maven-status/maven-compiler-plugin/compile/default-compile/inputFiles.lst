@@ -18,6 +18,7 @@
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/AST/Expression/PrefixExpression.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/AST/Statement/Statement.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/lexer/token/NameToken.java
+/Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/codegen/VirtualBlock.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/codegen/classfile/constants/NameAndTypeConstant.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/codegen/classfile/constants/Utf8Constant.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/lexer/token/FloatToken.java

@@ -33,18 +33,5 @@ public class InfoSec {
         //     cg.endFunction();
         //
         // cg.end();
-
-
-        // Lexer lex = new Lexer(argv[0]);
-        // Parser parser = new Parser(lex);
-        //
-        // Statement stmt = parser.nextStatement();
-        //
-        // while ( stmt != null ) {
-        //     System.out.println(stmt);
-        //     stmt = parser.nextStatement();
-        // }
-        //
-        // lex.close();
     }
 }

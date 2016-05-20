@@ -31,6 +31,10 @@ public class IfStatement extends Statement {
         this.elseBlock = block;
     }
 
+    public Expression getExpression() {
+        return condition;
+    }
+
     public Block getBlock() {
         return this.ifBlock;
     }

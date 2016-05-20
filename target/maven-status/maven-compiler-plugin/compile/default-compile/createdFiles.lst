@@ -54,6 +54,7 @@ infosec/codegen/classfile/constants/InterfaceMethodRefConstant.class
 infosec/codegen/Compiler.class
 infosec/AST/Statement/FunctionDecStatement$FunctionArg.class
 infosec/AST/Statement/WhileStatement.class
+infosec/codegen/VirtualBlock.class
 infosec/AST/Type.class
 infosec/codegen/VirtualMethod.class
 infosec/codegen/classfile/constants/NameAndTypeConstant.class

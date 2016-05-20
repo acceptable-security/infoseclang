@@ -23,12 +23,23 @@ public class Compiler {
         this.codeGen = new CodeGen(name);
         this.lexer = new Lexer(filename);
         this.parser = new Parser(this.lexer);
+
+        standardFunctions();
     }
 
     public void debug(int level, String msg) {
         if ( debugLevel >= level ) {
             System.out.println("[DEBUG] " + msg);
         }
+    }
+
+    public void standardFunctions() {
+        this.codeGen.startFunction("print", "void");
+        this.codeGen.addFunctionArgument("str", "java/lang/String");
+            this.codeGen.startMethodCall("java/lang/System", "out", "java/io/PrintStream", "println", "(Ljava/lang/String;)V");
+                this.codeGen.pushVariable("str");
+            this.codeGen.endMethodCall();
+        this.codeGen.endFunction();
     }
 
     public String compileExpression(Expression expr) {
@@ -67,6 +78,21 @@ public class Compiler {
 
             return lhs;
         }
+        else if ( expr instanceof VariableExpression ) {
+            this.codeGen.pushVariable(((VariableExpression) expr).getName());
+            return this.codeGen.getVariableType(((VariableExpression) expr).getName());
+        }
+        else if ( expr instanceof FunctionCallExpression ) {
+            FunctionCallExpression call = (FunctionCallExpression) expr;
+
+            this.codeGen.startFunctionCall(call.getName(), this.codeGen.getFunctionType(call.getName()));
+
+            for ( int i = 0; i < call.getArgCount(); i++ ) {
+                compileExpression(call.getArg(i));
+            }
+
+            this.codeGen.endFunctionCall();
+        }
 
         return "";
     }
@@ -95,6 +121,65 @@ public class Compiler {
 
             this.codeGen.endFunction();
         }
+        else if ( stmt instanceof VariableDecStatement ) {
+            debug(1, "Compiling a variable declaration statement.");
+
+            VariableDecStatement dec = (VariableDecStatement) stmt;
+
+            compileExpression(dec.getValue());
+
+            this.codeGen.storeLastVariable(dec.getName(), dec.getType().getBasicType());
+        }
+        else if ( stmt instanceof ExpressionStatement ) {
+            debug(1, "Compiling a expression statement.");
+
+            ExpressionStatement exprstmt = (ExpressionStatement) stmt;
+
+            if ( exprstmt.getType().equals("varset") ) {
+                InfixExpression expr = (InfixExpression) exprstmt.getExpression();
+                Expression _lhs = expr.getLHS();
+                Expression _rhs = expr.getRHS();
+
+                if ( !(_lhs instanceof VariableExpression ) ) {
+                    System.out.println("Failed to find a left hand side for a variable set expression.");
+                    return;
+                }
+
+                String lhs = ((VariableExpression) _lhs).getName();
+                String type = compileExpression(_rhs);
+                this.codeGen.storeLastVariable(lhs, type);
+            }
+            else if ( exprstmt.getType().equals("fncall") ) {
+                compileExpression(exprstmt.getExpression());
+            }
+            else if ( exprstmt.getType().equals("return") ) {
+                compileExpression(exprstmt.getExpression());
+                this.codeGen.returnVoid();
+            }
+        }
+        else if ( stmt instanceof IfStatement ) {
+            IfStatement ifstmt = (IfStatement) stmt;
+            Expression expr = ifstmt.getExpression();
+
+            if ( expr instanceof InfixExpression ) {
+                InfixExpression tmp = (InfixExpression) expr;
+                String a = compileExpression(tmp.getLHS());
+                String b = compileExpression(tmp.getRHS());
+                this.codeGen.startCondition(tmp.getOP(), a);
+            }
+            else {
+                String a = compileExpression(expr);
+                this.codeGen.startCondition("", a);
+            }
+
+            Block block = ifstmt.getBlock();
+
+            for ( int i = 0; i < block.getStatementCount(); i++ ) {
+                compileStatement(block.getStatement(i));
+            }
+
+            this.codeGen.endCondition();
+        }
     }
 
     public void compileAll() {
@@ -104,7 +189,6 @@ public class Compiler {
             compileStatement(stmt);
             stmt = parser.nextStatement();
         }
-
     }
 
     public void save() {

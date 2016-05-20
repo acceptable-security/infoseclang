@@ -6,7 +6,7 @@ import infosec.codegen.classfile.constants.*;
 import java.util.ArrayList;
 
 public class VirtualMethod {
-    private ArrayList<Byte> byteCode;
+    private VirtualBlock block;
     private ArrayList<VirtualField> args;
     private String descriptor;
     private String name;
@@ -14,10 +14,9 @@ public class VirtualMethod {
     private String ret_type;
     private boolean isPublic = true;
     private boolean isStatic = false;
-    private short variableCount = 0;
 
     public VirtualMethod(String name, String ret_type) {
-        this.byteCode = new ArrayList<Byte>();
+        this.block = new VirtualBlock((short) 0);
         this.args = new ArrayList<VirtualField>();
         this.descriptor = "";
         this.name = name;
@@ -26,7 +25,7 @@ public class VirtualMethod {
     }
 
     public VirtualMethod(String name, String ret_type, int ret_arrayDepth) {
-        this.byteCode = new ArrayList<Byte>();
+        this.block = new VirtualBlock((short) 0);
         this.args = new ArrayList<VirtualField>();
         this.descriptor = "";
         this.name = name;
@@ -34,17 +33,21 @@ public class VirtualMethod {
         this.ret_arrayDepth = ret_arrayDepth;
     }
 
+    public String getName() {
+        return name;
+    }
+
     public void setName(String name) {
         this.name = name;
     }
 
     public void addArg(String name, String type) {
-        variableCount++;
+        this.block.nextVariable();
         this.args.add(new VirtualField(name, type));
     }
 
     public void addArg(String name, String type, int arrayDepth) {
-        variableCount++;
+        this.block.nextVariable();
         this.args.add(new VirtualField(name, type, arrayDepth));
     }
 
@@ -57,28 +60,47 @@ public class VirtualMethod {
     }
 
     public void addOperation(OPCode op) {
-        this.byteCode.add((byte) op.getOP());
+        this.block.addOperation(op);
     }
 
     public void addOperation(OPCode op, byte arg) {
-        this.byteCode.add((byte) op.getOP());
-        this.byteCode.add(arg);
+        this.block.addOperation(op, arg);
     }
 
     public void addOperation(OPCode op, short arg) {
-        this.byteCode.add((byte) op.getOP());
-        this.byteCode.add((byte) ((arg >> 8) & 0xFF));
-        this.byteCode.add((byte) (arg & 0xFF));
+        this.block.addOperation(op, arg);
     }
 
     public void addOperation(OPCode op, byte arg, byte arg2) {
-        this.byteCode.add((byte) op.getOP());
-        this.byteCode.add(arg);
-        this.byteCode.add(arg2);
+        this.block.addOperation(op, arg, arg2);
     }
 
-    public void addOperation(OPCode op, float arg) {
+    public void addRealOperation(OPCode op) {
+        this.block.addRealOperation(op);
+    }
 
+    public void addRealOperation(OPCode op, byte arg) {
+        this.block.addRealOperation(op, arg);
+    }
+
+    public void addRealOperation(OPCode op, short arg) {
+        this.block.addRealOperation(op, arg);
+    }
+
+    public void addRealOperation(OPCode op, byte arg, byte arg2) {
+        this.block.addRealOperation(op, arg, arg2);
+    }
+
+    public void startBlock() {
+        this.block.startBlock();
+    }
+
+    public int getInternalBlockSize() {
+        return this.block.getInternalBlockSize();
+    }
+
+    public void endBlock() {
+        this.block.endBlock();
     }
 
     public void setPublic(boolean val) {
@@ -146,23 +168,25 @@ public class VirtualMethod {
         return out;
     }
 
+    public short getIP() {
+        return this.block.getIP();
+    }
+
     public byte[] byteCode() {
-        byte[] bytes = new byte[byteCode.size()];
-
-        for ( int i = 0; i < byteCode.size(); i++ ) {
-            bytes[i] = byteCode.get(i).byteValue();
-        }
-
-        return bytes;
+        return this.block.byteCode();
     }
 
     public short nextVariable() {
-        return variableCount++;
+        return this.block.nextVariable();
+    }
+
+    public short getVariableCount() {
+        return this.block.getVariableCount();
     }
 
     public void compileTo(CodeEmitter codegen) {
         MethodInfo method = new MethodInfo(codegen.utf8(name), codegen.utf8(getDescriptor()));
-        CodeAttribute code = new CodeAttribute(codegen.utf8("Code"), (short) 200, variableCount); // TODO - Pick less arbitrary numbers
+        CodeAttribute code = new CodeAttribute(codegen.utf8("Code"), (short) 200, this.block.getVariableCount()); // TODO - Pick less arbitrary numbers
         code.setCode(byteCode());
         method.addAttribute(code);
 
