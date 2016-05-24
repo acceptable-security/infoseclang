@@ -238,14 +238,17 @@ public class Parser {
                     return null;
                 }
 
-                if ( !expectSpecial(":") ) {
-                    return null;
+                Type type = null;
+
+                if ( matchSpecial(":") ) {
+                    type = readType();
+
+                    if ( type == null ) {
+                        return null;
+                    }
                 }
-
-                Type type = readType();
-
-                if ( type == null ) {
-                    return null;
+                else {
+                    type = new Type("void", 0);
                 }
 
                 Expression value = null;
@@ -256,6 +259,12 @@ public class Parser {
 
                     if ( value == null ) {
                         System.out.println("Variable declaration equality must be followed by an expression.");
+                        return null;
+                    }
+                }
+                else {
+                    if ( type.getBasicType().equals("void") ) {
+                        System.out.println("Can't implicitly type a variable without a value.");
                         return null;
                     }
                 }

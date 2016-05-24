@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.Stack;
 
 public class CodeGen {
-    private enum Type {
+    private enum BasicType {
         BYTE,
         SHORT,
         INT,
@@ -23,7 +23,7 @@ public class CodeGen {
     private VirtualMethod method;
     private String name;
     private HashMap<String, Short> variables;
-    private HashMap<String, Type> varTypes;
+    private HashMap<String, BasicType> varTypes;
     private HashMap<String, String> functionType;
     private short currentCallField = -1;
     private short currentCallMethod = -1;
@@ -33,7 +33,7 @@ public class CodeGen {
     public CodeGen(String name) {
         this.name = name;
         this.variables = new HashMap<String, Short>();
-        this.varTypes = new HashMap<String, Type>();
+        this.varTypes = new HashMap<String, BasicType>();
         this.functionType = new HashMap<String, String>();
 
         this.emitter = new CodeEmitter();
@@ -45,30 +45,30 @@ public class CodeGen {
         this.tmpOp = new Stack<OPCode>();
     }
 
-    public Type typeFromString(String type) {
+    public BasicType typeFromString(String type) {
         if ( type.equals("byte") ) {
-            return Type.BYTE;
+            return BasicType.BYTE;
         }
         else if ( type.equals("short") ) {
-            return Type.SHORT;
+            return BasicType.SHORT;
         }
         else if ( type.equals("int") ) {
-            return Type.INT;
+            return BasicType.INT;
         }
         else if ( type.equals("long") ) {
-            return Type.LONG;
+            return BasicType.LONG;
         }
         else if ( type.equals("float") ) {
-            return Type.FLOAT;
+            return BasicType.FLOAT;
         }
         else if ( type.equals("double") ) {
-            return Type.DOUBLE;
+            return BasicType.DOUBLE;
         }
         else if ( type.equals("char") ) {
-            return Type.CHAR;
+            return BasicType.CHAR;
         }
 
-        return Type.REF;
+        return BasicType.REF;
     }
 
     public void pushInteger(int val) {
@@ -145,8 +145,12 @@ public class CodeGen {
         }
     }
 
+    public void pushVoid() {
+        this.method.addOperation(OPCode.OP_aconst_null);
+    }
+
     public void operation(String op, String _type) {
-        Type type = typeFromString(_type);
+        BasicType type = typeFromString(_type);
 
         if ( op.equals("+") ) {
             switch ( type ) {
@@ -249,12 +253,11 @@ public class CodeGen {
     }
 
     public void goTo(short loc) {
-        System.out.println("go to " + loc);
         method.addOperation(OPCode.OP_goto, loc);
     }
 
     public void startCondition(String op, String _type, boolean flip) {
-        Type type = typeFromString(_type);
+        BasicType type = typeFromString(_type);
 
         switch ( type ) {
             case INT:
@@ -308,8 +311,8 @@ public class CodeGen {
     }
 
     public void convert(String _from, String _to) {
-        Type from = typeFromString(_from);
-        Type to = typeFromString(_to);
+        BasicType from = typeFromString(_from);
+        BasicType to = typeFromString(_to);
 
         if ( from == to ) {
             return;
@@ -359,7 +362,7 @@ public class CodeGen {
         }
 
         this.variables = new HashMap<String, Short>();
-        this.varTypes = new HashMap<String, Type>();
+        this.varTypes = new HashMap<String, BasicType>();
 
         method = new VirtualMethod(name, type);
         method.setStatic(true);
@@ -372,7 +375,7 @@ public class CodeGen {
         }
 
         this.variables = new HashMap<String, Short>();
-        this.varTypes = new HashMap<String, Type>();
+        this.varTypes = new HashMap<String, BasicType>();
 
         method = new VirtualMethod(name, type, arrayDepth);
         method.setStatic(true);
@@ -420,7 +423,7 @@ public class CodeGen {
 
         short local;
 
-        Type type = typeFromString(_type);
+        BasicType type = typeFromString(_type);
 
         if ( this.variables.containsKey(name) ) {
             local = this.variables.get(name);
@@ -441,13 +444,42 @@ public class CodeGen {
         }
     }
 
+    public void storeDefaultVariable(String name, String _type) {
+        if ( method == null ) {
+            System.out.println("Attempted to load a variable while no function was loaded.");
+            return;
+        }
+
+        short local;
+
+        BasicType type = typeFromString(_type);
+
+        if ( this.variables.containsKey(name) ) {
+            local = this.variables.get(name);
+        }
+        else {
+            local = this.method.nextVariable();
+            this.variables.put(name, new Short(local));
+            this.varTypes.put(name, type);
+        }
+
+        switch ( type ) {
+            case INT: pushInteger(0); method.addOperation(OPCode.OP_istore, (byte) local); break;
+            case LONG: pushInteger(0); method.addOperation(OPCode.OP_lstore, (byte) local); break;
+            case FLOAT: pushFloat(0); method.addOperation(OPCode.OP_fstore, (byte) local); break;
+            case DOUBLE: pushFloat(0); method.addOperation(OPCode.OP_dstore, (byte) local); break;
+            case REF: pushVoid(); method.addOperation(OPCode.OP_astore, (byte) local); break;
+            default: return;
+        }
+    }
+
     public void storeArgVariable(String name, String _type) {
         if ( method == null ) {
             System.out.println("Attempted to load a variable while no function was loaded.");
             return;
         }
 
-        Type type = typeFromString(_type);
+        BasicType type = typeFromString(_type);
         short local = (short) (this.method.getVariableCount() - 1);
         this.variables.put(name, new Short(local));
         this.varTypes.put(name, type);

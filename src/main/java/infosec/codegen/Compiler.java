@@ -126,9 +126,14 @@ public class Compiler {
 
             VariableDecStatement dec = (VariableDecStatement) stmt;
 
-            compileExpression(dec.getValue());
+            String type = compileExpression(dec.getValue());
+            String ours = dec.getType().getBasicType();
 
-            this.codeGen.storeLastVariable(dec.getName(), dec.getType().getBasicType());
+            if ( ours.equals("void") ) {
+                ours = type;
+                System.out.println("Resolved type to " + type);
+            }
+            this.codeGen.storeLastVariable(dec.getName(), ours);
         }
         else if ( stmt instanceof ExpressionStatement ) {
             debug(1, "Compiling a expression statement.");

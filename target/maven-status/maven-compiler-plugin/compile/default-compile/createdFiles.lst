@@ -8,7 +8,6 @@ infosec/codegen/classfile/attributes/ConstantValueAttribute.class
 infosec/codegen/classfile/constants/MethodRefConstant.class
 infosec/AST/Expression/NumberExpression.class
 infosec/lexer/token/SpecialToken.class
-infosec/codegen/CodeGen$Type.class
 infosec/codegen/classfile/constants/Utf8Constant.class
 infosec/codegen/VirtualField.class
 infosec/codegen/classfile/FieldInfo.class
@@ -24,6 +23,7 @@ infosec/AST/Statement/RangeStatement.class
 infosec/codegen/Emitter.class
 infosec/codegen/classfile/constants/DoubleConstant.class
 infosec/AST/Block.class
+infosec/codegen/CodeGen$BasicType.class
 infosec/codegen/CodeEmitter.class
 infosec/codegen/classfile/InnerClass.class
 infosec/lexer/token/NameToken.class
