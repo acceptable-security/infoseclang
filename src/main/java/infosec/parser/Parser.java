@@ -10,11 +10,11 @@ public class Parser {
     private Lexer lexer;
 
     public String[][] op_pres = new String[][] {
+        new String[] {"=", "+=", "-=", "*=", "/=", "&=", "^="},
         new String[] {"<", ">", ">=", "<=", "==", "!=", "||", "&&"},
         new String[] {"+", "-"},
         new String[] {"*", "%", "/"},
-        new String[] {"<<<", "<<", ">>", ">>>", "&", "^", "|"},
-        new String[] {"=", "+=", "-=", "*=", "/=", "&=", "^="}
+        new String[] {"<<<", "<<", ">>", ">>>", "&", "^", "|"}
     };
 
     public Parser(Lexer lexer) {
@@ -279,22 +279,17 @@ public class Parser {
                 return new IfStatement(condition, block, elseBlock);
             }
             else if ( matchName("for") ) {
-                Expression condition1 = nextExpression(0);
+                Statement initial = nextStatement();
+                Expression condition = nextExpression(0);
 
                 if ( !expectSpecial(";") ) {
                     return null;
                 }
 
-                Expression condition2 = nextExpression(0);
-
-                if ( !expectSpecial(";") ) {
-                    return null;
-                }
-
-                Expression condition3 = nextExpression(0);
+                Statement each = nextStatement();
                 Block block = readBlock();
 
-                return new ForStatement(condition1, condition2, condition3, block);
+                return new ForStatement(initial, condition, each, block);
             }
             else if ( matchName("while") ) {
                 Expression condition = nextExpression(0);

@@ -75,6 +75,22 @@ public class VirtualMethod {
         this.block.addOperation(op, arg, arg2);
     }
 
+    public void addSubOperation(OPCode op) {
+        this.block.addSubOperation(op);
+    }
+
+    public void addSubOperation(OPCode op, byte arg) {
+        this.block.addSubOperation(op, arg);
+    }
+
+    public void addSubOperation(OPCode op, short arg) {
+        this.block.addSubOperation(op, arg);
+    }
+
+    public void addSubOperation(OPCode op, byte arg, byte arg2) {
+        this.block.addSubOperation(op, arg, arg2);
+    }
+
     public void addRealOperation(OPCode op) {
         this.block.addRealOperation(op);
     }
@@ -89,6 +105,10 @@ public class VirtualMethod {
 
     public void addRealOperation(OPCode op, byte arg, byte arg2) {
         this.block.addRealOperation(op, arg, arg2);
+    }
+
+    public short getSubIP() {
+        return this.block.getSubIP();
     }
 
     public void startBlock() {

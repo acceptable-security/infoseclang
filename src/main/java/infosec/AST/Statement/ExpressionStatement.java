@@ -4,11 +4,18 @@ import infosec.AST.Expression.*;
 import java.util.Arrays;
 
 public class ExpressionStatement extends Statement {
-    private String[] var_dec = new String[] {"=", "+=", "-=", "*=", "/=", "&=", "^="};
+    private String[] var_dec = new String[] { "=", "+=", "-=", "*=", "/=", "&=", "^="};
     private Expression exp;
 
     private boolean isVarDec(String op) {
-        return Arrays.asList(var_dec).indexOf(op) > -1;
+        System.out.println("Testing operator: " + op);
+        for ( int i = 0; i < var_dec.length; i++ ) {
+            if ( var_dec[i].equals(op) ) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public ExpressionStatement(Expression exp) {

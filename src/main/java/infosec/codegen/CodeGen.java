@@ -5,6 +5,7 @@ import infosec.parser.*;
 import infosec.AST.Statement.*;
 import infosec.codegen.classfile.*;
 import java.util.HashMap;
+import java.util.Stack;
 
 public class CodeGen {
     private enum Type {
@@ -27,7 +28,7 @@ public class CodeGen {
     private short currentCallField = -1;
     private short currentCallMethod = -1;
     private short conditionBeforeSize;
-    private OPCode tmp;
+    private Stack<OPCode> tmpOp;
 
     public CodeGen(String name) {
         this.name = name;
@@ -40,6 +41,8 @@ public class CodeGen {
         this.emitter.superClass("java/lang/Object");
         this.emitter.setSuper(true);
         this.emitter.setPublic(true);
+
+        this.tmpOp = new Stack<OPCode>();
     }
 
     public Type typeFromString(String type) {
@@ -241,54 +244,66 @@ public class CodeGen {
         }
     }
 
-    public void startCondition(String op, String _type) {
+    public short getIP() {
+        return this.method.getIP();
+    }
+
+    public void goTo(short loc) {
+        System.out.println("go to " + loc);
+        method.addOperation(OPCode.OP_goto, loc);
+    }
+
+    public void startCondition(String op, String _type, boolean flip) {
         Type type = typeFromString(_type);
 
         switch ( type ) {
             case INT:
                 if ( op.equals("==") ) {
-                    tmp = OPCode.OP_if_icmpne;
+                    tmpOp.push(flip ? OPCode.OP_if_icmpne : OPCode.OP_if_icmpeq);
                 }
                 else if ( op.equals("!=") ) {
-                    tmp = OPCode.OP_if_icmpeq;
+                    tmpOp.push(flip ? OPCode.OP_if_icmpeq : OPCode.OP_if_icmpne);
                 }
                 else if ( op.equals("<") ) {
-                    tmp = OPCode.OP_if_icmpge;
+                    tmpOp.push(flip ? OPCode.OP_if_icmpge : OPCode.OP_if_icmplt);
                 }
                 else if ( op.equals(">=") ) {
-                    tmp = OPCode.OP_if_icmplt;
+                    tmpOp.push(flip ? OPCode.OP_if_icmplt : OPCode.OP_if_icmpge);
                 }
                 else if ( op.equals(">") ) {
-                    tmp = OPCode.OP_if_icmple;
+                    tmpOp.push(flip ? OPCode.OP_if_icmple : OPCode.OP_if_icmpgt);
                 }
                 else if ( op.equals("<=") ) {
-                    tmp = OPCode.OP_if_icmpgt;
+                    tmpOp.push(flip ? OPCode.OP_if_icmpgt : OPCode.OP_if_icmple);
                 }
                 else {
-                    tmp = OPCode.OP_if_icmpne;
+                    tmpOp.push(flip ? OPCode.OP_if_icmpne : OPCode.OP_if_icmpeq);
                 }
                 break;
 
             case REF:
                 if ( op.equals("==") ) {
-                    tmp = OPCode.OP_if_acmpne;
+                    tmpOp.push(flip ? OPCode.OP_if_acmpne : OPCode.OP_if_acmpeq);
                 }
                 else if ( op.equals("!=") ) {
-                    tmp = OPCode.OP_if_acmpeq;
+                    tmpOp.push(flip ? OPCode.OP_if_acmpeq : OPCode.OP_if_acmpne);
                 }
                 else {
-                    tmp = OPCode.OP_ifnonnull;
+                    tmpOp.push(flip ? OPCode.OP_ifnonnull : OPCode.OP_ifnull);
                 }
                 break;
         }
 
         this.method.startBlock();
-        conditionBeforeSize = (short) this.method.getInternalBlockSize();
     }
 
     public void endCondition() {
-        short offset = (short) (3 + this.method.getInternalBlockSize() - conditionBeforeSize);
-        this.method.addRealOperation(tmp, offset);
+        short offset = (short)(3 + this.method.getIP() - this.method.getSubIP());
+
+        byte a = (byte) (((offset >> 8)) & 0xFF);
+        byte b = (byte) (offset & 0xFF);
+
+        this.method.addSubOperation(tmpOp.pop(), a, b);
         this.method.endBlock();
     }
 

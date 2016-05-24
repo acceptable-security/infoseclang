@@ -16,11 +16,11 @@ public class VirtualBlock {
     }
 
     public void startBlock() {
-        if ( internalBlock != null ) {
-            internalBlock.startBlock();
+        if ( internalBlock == null ) {
+            internalBlock = new VirtualBlock(this.variableCount);
         }
         else {
-            internalBlock = new VirtualBlock(this.variableCount);
+            internalBlock.startBlock();
         }
     }
 
@@ -57,17 +57,24 @@ public class VirtualBlock {
     }
 
     public void endBlock() {
-        if ( internalBlock == null ) {
-            return;
+        if ( internalBlock != null ) {
+            if ( !internalBlock.hasInternalBlock() ) {
+                byte[] up = getInternalByteCode();
+
+                for ( int i = 0; i < up.length; i++ ) {
+                    this.byteCode.add(up[i]);
+                }
+
+                internalBlock = null;
+            }
+            else {
+                this.internalBlock.endBlock();
+            }
         }
+    }
 
-        byte[] up = getInternalByteCode();
-
-        for ( int i = 0; i < up.length; i++ ) {
-            this.byteCode.add(up[i]);
-        }
-
-        internalBlock = null;
+    public boolean hasInternalBlock() {
+        return internalBlock != null;
     }
 
     public void addRealOperation(OPCode op) {
@@ -91,12 +98,49 @@ public class VirtualBlock {
         this.byteCode.add(arg2);
     }
 
+    public void addSubOperation(OPCode op) {
+        if ( this.internalBlock != null && this.internalBlock.hasInternalBlock()) {
+            this.internalBlock.addSubOperation(op);
+            return;
+        }
+
+        addRealOperation(op);
+    }
+
+    public void addSubOperation(OPCode op, byte arg) {
+        if ( this.internalBlock != null && this.internalBlock.hasInternalBlock()) {
+            this.internalBlock.addSubOperation(op, arg);
+            return;
+        }
+
+        addRealOperation(op, arg);
+    }
+
+    public void addSubOperation(OPCode op, short arg) {
+        if ( this.internalBlock != null && this.internalBlock.hasInternalBlock()) {
+            this.internalBlock.addSubOperation(op, arg);
+            return;
+        }
+
+        addRealOperation(op, arg);
+    }
+
+    public void addSubOperation(OPCode op, byte arg, byte arg2) {
+        if ( this.internalBlock != null && this.internalBlock.hasInternalBlock()) {
+            this.internalBlock.addSubOperation(op, arg, arg2);
+            return;
+        }
+
+        addRealOperation(op, arg, arg2);
+    }
+
     public void addOperation(OPCode op) {
         if ( this.internalBlock != null ) {
             this.internalBlock.addOperation(op);
             return;
         }
-        this.byteCode.add((byte) op.getOP());
+
+        addRealOperation(op);
     }
 
     public void addOperation(OPCode op, byte arg) {
@@ -104,8 +148,8 @@ public class VirtualBlock {
             this.internalBlock.addOperation(op, arg);
             return;
         }
-        this.byteCode.add((byte) op.getOP());
-        this.byteCode.add(arg);
+
+        addRealOperation(op, arg);
     }
 
     public void addOperation(OPCode op, short arg) {
@@ -113,9 +157,8 @@ public class VirtualBlock {
             this.internalBlock.addOperation(op, arg);
             return;
         }
-        this.byteCode.add((byte) op.getOP());
-        this.byteCode.add((byte) ((arg >> 8) & 0xFF));
-        this.byteCode.add((byte) (arg & 0xFF));
+
+        addRealOperation(op, arg);
     }
 
     public void addOperation(OPCode op, byte arg, byte arg2) {
@@ -123,13 +166,32 @@ public class VirtualBlock {
             this.internalBlock.addOperation(op, arg, arg2);
             return;
         }
-        this.byteCode.add((byte) op.getOP());
-        this.byteCode.add(arg);
-        this.byteCode.add(arg2);
+
+        addRealOperation(op, arg, arg2);
+    }
+
+    public short getRealIP() {
+        return (short) this.byteCode.size();
     }
 
     public short getIP() {
-        return (short) this.byteCode.size();
+        short block = (short) this.byteCode.size();
+
+        if ( hasInternalBlock() ) {
+            block += this.internalBlock.getIP();
+        }
+
+        return block;
+    }
+
+    public short getSubIP() {
+        short block = (short) this.byteCode.size();
+
+        if ( this.internalBlock != null && this.internalBlock.hasInternalBlock() ) {
+            block += this.internalBlock.getSubIP();
+        }
+
+        return block;
     }
 
     public byte[] byteCode() {

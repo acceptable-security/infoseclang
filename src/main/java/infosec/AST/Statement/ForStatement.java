@@ -4,21 +4,21 @@ import infosec.AST.Expression.*;
 import infosec.AST.Block;
 
 public class ForStatement extends Statement {
-    private Expression condition1;
-    private Expression condition2;
-    private Expression condition3;
+    private Statement initial;
+    private Expression condition;
+    private Statement each;
     private Block block;
 
-    public ForStatement(Expression condition1, Expression condition2, Expression condition3) {
-        this.condition1 = condition1;
-        this.condition2 = condition2;
-        this.condition3 = condition3;
+    public ForStatement(Statement initial, Expression condition, Statement each) {
+        this.initial = initial;
+        this.condition = condition;
+        this.each = each;
     }
 
-    public ForStatement(Expression condition1, Expression condition2, Expression condition3, Block block) {
-        this.condition1 = condition1;
-        this.condition2 = condition2;
-        this.condition3 = condition3;
+    public ForStatement(Statement initial, Expression condition, Statement each, Block block) {
+        this.initial = initial;
+        this.condition = condition;
+        this.each = each;
         this.block = block;
     }
 
@@ -26,12 +26,16 @@ public class ForStatement extends Statement {
         this.block = block;
     }
 
-    public Expression[] getExpressions() {
-        return new Expression[] {
-            condition1,
-            condition2,
-            condition3
-        };
+    public Statement getInitialStatement() {
+        return initial;
+    }
+
+    public Statement getEachStatement() {
+        return each;
+    }
+
+    public Expression getCondition() {
+        return condition;
     }
 
     public Block getBlock() {
@@ -39,6 +43,6 @@ public class ForStatement extends Statement {
     }
 
     public String toString() {
-        return "for " + this.condition1 + "; " + this.condition2 + "; " + this.condition3 + " " + block;
+        return "for " + this.initial + "; " + this.condition + "; " + this.each + " " + block;
     }
 }

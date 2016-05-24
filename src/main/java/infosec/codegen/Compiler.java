@@ -14,7 +14,7 @@ public class Compiler {
     private CodeGen codeGen;
     private Parser parser;
     private Lexer lexer;
-    private int debugLevel = 1;
+    private int debugLevel = 0;
 
     public Compiler(String filename) {
         Path path = Paths.get(filename);
@@ -136,6 +136,8 @@ public class Compiler {
             ExpressionStatement exprstmt = (ExpressionStatement) stmt;
 
             if ( exprstmt.getType().equals("varset") ) {
+                debug(1, "Variable set expression detected...");
+
                 InfixExpression expr = (InfixExpression) exprstmt.getExpression();
                 Expression _lhs = expr.getLHS();
                 Expression _rhs = expr.getRHS();
@@ -150,9 +152,11 @@ public class Compiler {
                 this.codeGen.storeLastVariable(lhs, type);
             }
             else if ( exprstmt.getType().equals("fncall") ) {
+                debug(1, "Function call expression detected...");
                 compileExpression(exprstmt.getExpression());
             }
             else if ( exprstmt.getType().equals("return") ) {
+                debug(1, "Return expression detected.");
                 compileExpression(exprstmt.getExpression());
                 this.codeGen.returnVoid();
             }
@@ -165,11 +169,11 @@ public class Compiler {
                 InfixExpression tmp = (InfixExpression) expr;
                 String a = compileExpression(tmp.getLHS());
                 String b = compileExpression(tmp.getRHS());
-                this.codeGen.startCondition(tmp.getOP(), a);
+                this.codeGen.startCondition(tmp.getOP(), a, true);
             }
             else {
                 String a = compileExpression(expr);
-                this.codeGen.startCondition("", a);
+                this.codeGen.startCondition("", a, true);
             }
 
             Block block = ifstmt.getBlock();
@@ -178,6 +182,61 @@ public class Compiler {
                 compileStatement(block.getStatement(i));
             }
 
+            this.codeGen.endCondition();
+        }
+        else if ( stmt instanceof WhileStatement ) {
+            WhileStatement whilestmt = (WhileStatement) stmt;
+            Expression expr = whilestmt.getCondition();
+
+            short ip = this.codeGen.getIP();
+
+            if ( expr instanceof InfixExpression ) {
+                InfixExpression tmp = (InfixExpression) expr;
+                String a = compileExpression(tmp.getLHS());
+                String b = compileExpression(tmp.getRHS());
+                this.codeGen.startCondition(tmp.getOP(), a, true);
+            }
+            else {
+                String a = compileExpression(expr);
+                this.codeGen.startCondition("", a, true);
+            }
+
+            Block block = whilestmt.getBlock();
+
+            for ( int i = 0; i < block.getStatementCount(); i++ ) {
+                compileStatement(block.getStatement(i));
+            }
+
+            this.codeGen.goTo((short) (ip - (this.codeGen.getIP() + 3)));
+            this.codeGen.endCondition();
+        }
+        else if ( stmt instanceof ForStatement) {
+            ForStatement forstmt = (ForStatement) stmt;
+
+            compileStatement(forstmt.getInitialStatement());
+
+            Expression expr = forstmt.getCondition();
+            short ip = this.codeGen.getIP();
+
+            if ( expr instanceof InfixExpression ) {
+                InfixExpression tmp = (InfixExpression) expr;
+                String a = compileExpression(tmp.getLHS());
+                String b = compileExpression(tmp.getRHS());
+                this.codeGen.startCondition(tmp.getOP(), a, true);
+            }
+            else {
+                String a = compileExpression(expr);
+                this.codeGen.startCondition("", a, true);
+            }
+
+            Block block = forstmt.getBlock();
+
+            for ( int i = 0; i < block.getStatementCount(); i++ ) {
+                compileStatement(block.getStatement(i));
+            }
+
+            compileStatement(forstmt.getEachStatement());
+            this.codeGen.goTo((short) (ip - (this.codeGen.getIP() + 3)));
             this.codeGen.endCondition();
         }
     }

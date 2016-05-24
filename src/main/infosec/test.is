@@ -1,16 +1,5 @@
-fun test(a : int) : void {
-    a = 3;
-}
-
 fun main(argv : string[]) : void {
-    var a : int = 3;
-    var b : int = 4;
-
-    if ( a > (b - 2) ) {
-        print("test");
+    for var i : int = 0; i < 10; i = i + 1; {
+        print("HI!");
     }
-
-    var c : int = 8;
-
-    print("test");
 }
