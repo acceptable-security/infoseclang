@@ -14,6 +14,7 @@
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/codegen/classfile/attributes/InnerClassAttribute.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/codegen/classfile/InnerClass.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/lexer/Lexer.java
+/Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/AST/Expression/ArrayDereferenceExpression.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/InfoSec.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/AST/Expression/PrefixExpression.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/AST/Statement/Statement.java

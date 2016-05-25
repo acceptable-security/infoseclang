@@ -92,6 +92,13 @@ public class VirtualBlock {
         this.byteCode.add((byte) (arg & 0xFF));
     }
 
+    public void addRealOperation(OPCode op, short arg, byte arg2) {
+        this.byteCode.add((byte) op.getOP());
+        this.byteCode.add((byte) ((arg >> 8) & 0xFF));
+        this.byteCode.add((byte) (arg & 0xFF));
+        this.byteCode.add(arg2);
+    }
+
     public void addRealOperation(OPCode op, byte arg, byte arg2) {
         this.byteCode.add((byte) op.getOP());
         this.byteCode.add(arg);
@@ -123,6 +130,15 @@ public class VirtualBlock {
         }
 
         addRealOperation(op, arg);
+    }
+
+    public void addSubOperation(OPCode op, short arg, byte arg2) {
+        if ( this.internalBlock != null && this.internalBlock.hasInternalBlock()) {
+            this.internalBlock.addSubOperation(op, arg, arg2);
+            return;
+        }
+
+        addRealOperation(op, arg, arg2);
     }
 
     public void addSubOperation(OPCode op, byte arg, byte arg2) {
@@ -159,6 +175,15 @@ public class VirtualBlock {
         }
 
         addRealOperation(op, arg);
+    }
+
+    public void addOperation(OPCode op, short arg, byte arg2) {
+        if ( this.internalBlock != null ) {
+            this.internalBlock.addOperation(op, arg, arg2);
+            return;
+        }
+
+        addRealOperation(op, arg, arg2);
     }
 
     public void addOperation(OPCode op, byte arg, byte arg2) {

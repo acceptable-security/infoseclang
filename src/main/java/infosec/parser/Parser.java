@@ -89,6 +89,15 @@ public class Parser {
             else {
                 lhs = new VariableExpression(((NameToken) next).value());
             }
+
+            if ( matchSpecial("[") ) {
+                String name = ((NameToken) next).value();
+                lhs = new ArrayDereferenceExpression(new VariableExpression(name), nextExpression(0));
+
+                if ( !expectSpecial("]") ) {
+                    return null;
+                }
+            }
         }
         else if ( next.type() == "String" ) {
             lexer.next();

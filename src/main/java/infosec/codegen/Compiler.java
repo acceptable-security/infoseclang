@@ -93,7 +93,15 @@ public class Compiler {
 
             this.codeGen.endFunctionCall();
         }
+        else if ( expr instanceof ArrayDereferenceExpression ) {
+            ArrayDereferenceExpression ader = (ArrayDereferenceExpression) expr;
 
+            String type = compileExpression(ader.getLHS());
+            compileExpression(ader.getInner());
+
+            this.codeGen.loadFromArray(type);
+            return type;
+        }
         return "";
     }
 
@@ -147,14 +155,26 @@ public class Compiler {
                 Expression _lhs = expr.getLHS();
                 Expression _rhs = expr.getRHS();
 
-                if ( !(_lhs instanceof VariableExpression ) ) {
+                if ( !(_lhs instanceof VariableExpression ) && !(_lhs instanceof ArrayDereferenceExpression) ) {
                     System.out.println("Failed to find a left hand side for a variable set expression.");
                     return;
                 }
 
-                String lhs = ((VariableExpression) _lhs).getName();
-                String type = compileExpression(_rhs);
-                this.codeGen.storeLastVariable(lhs, type);
+                if ( _lhs instanceof VariableExpression ) {
+                    String lhs = ((VariableExpression) _lhs).getName();
+                    String type = compileExpression(_rhs);
+                    this.codeGen.storeLastVariable(lhs, type);
+                }
+                else if ( _lhs instanceof ArrayDereferenceExpression ) {
+                    ArrayDereferenceExpression ader = (ArrayDereferenceExpression) _lhs;
+
+                    String type = compileExpression(ader.getLHS());
+                    compileExpression(ader.getInner());
+                    compileExpression(_rhs);
+
+                    this.codeGen.startLastArrayStore(type);
+                    this.codeGen.endArrayStore();
+                }
             }
             else if ( exprstmt.getType().equals("fncall") ) {
                 debug(1, "Function call expression detected...");

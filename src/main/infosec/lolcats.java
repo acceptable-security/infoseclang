@@ -1,10 +1,6 @@
 public class lolcats {
     public static void main(String[] argv) {
-        int a = 3;
-        int b = 4;
-
-        if ( a > b ) {
-            return;
-        }
+        int[] a = new int[5];
+        a[0] = 1;
     }
 }

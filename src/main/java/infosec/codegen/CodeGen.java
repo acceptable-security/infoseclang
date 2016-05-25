@@ -19,15 +19,38 @@ public class CodeGen {
         REF
     };
 
+    public enum ArrayType {
+        T_BOOLEAN	((byte) 4),
+        T_CHAR	    ((byte) 5),
+        T_FLOAT	    ((byte) 6),
+        T_DOUBLE	((byte) 7),
+        T_BYTE	    ((byte) 8),
+        T_SHORT	    ((byte) 9),
+        T_INT	    ((byte) 10),
+        T_LONG  	((byte) 11);
+
+        private final byte code;
+
+        ArrayType(byte code) {
+            this.code = code;
+        }
+
+        public byte getCode() {
+            return this.code;
+        }
+    };
+
     private CodeEmitter emitter;
     private VirtualMethod method;
     private String name;
     private HashMap<String, Short> variables;
     private HashMap<String, BasicType> varTypes;
+    private HashMap<String, Integer> arrayDepth;
     private HashMap<String, String> functionType;
     private short currentCallField = -1;
     private short currentCallMethod = -1;
     private short conditionBeforeSize;
+    private BasicType tmpArrayStore;
     private Stack<OPCode> tmpOp;
 
     public CodeGen(String name) {
@@ -147,6 +170,45 @@ public class CodeGen {
 
     public void pushVoid() {
         this.method.addOperation(OPCode.OP_aconst_null);
+    }
+
+    public void pushNewArray(int dimmensions, String type) {
+        if ( dimmensions == 1 ) {
+            if ( type.equals("bool") ) {
+                this.method.addOperation(OPCode.OP_newarray, ArrayType.T_BOOLEAN.getCode());
+            }
+            else if ( type.equals("char") ) {
+                this.method.addOperation(OPCode.OP_newarray, ArrayType.T_CHAR.getCode());
+            }
+            else if ( type.equals("float") ) {
+                this.method.addOperation(OPCode.OP_newarray, ArrayType.T_FLOAT.getCode());
+            }
+            else if ( type.equals("double") ) {
+                this.method.addOperation(OPCode.OP_newarray, ArrayType.T_DOUBLE.getCode());
+            }
+            else if ( type.equals("byte") ) {
+                this.method.addOperation(OPCode.OP_newarray, ArrayType.T_BYTE.getCode());
+            }
+            else if ( type.equals("short") ) {
+                this.method.addOperation(OPCode.OP_newarray, ArrayType.T_SHORT.getCode());
+            }
+            else if ( type.equals("int") ) {
+                this.method.addOperation(OPCode.OP_newarray, ArrayType.T_INT.getCode());
+            }
+            else if ( type.equals("long") ) {
+                this.method.addOperation(OPCode.OP_newarray, ArrayType.T_LONG.getCode());
+            }
+            else {
+                this.method.addOperation(OPCode.OP_anewarray, this.emitter.newClass(type));
+            }
+        }
+        else {
+            if ( typeFromString(type) != BasicType.REF ) {
+                type = (new VirtualField("", type, dimmensions).toString());
+            }
+
+            this.method.addOperation(OPCode.OP_multianewarray, this.emitter.newClass(type), (byte) dimmensions);
+        }
     }
 
     public void operation(String op, String _type) {
@@ -363,6 +425,7 @@ public class CodeGen {
 
         this.variables = new HashMap<String, Short>();
         this.varTypes = new HashMap<String, BasicType>();
+        this.arrayDepth = new HashMap<String, Integer>();
 
         method = new VirtualMethod(name, type);
         method.setStatic(true);
@@ -376,6 +439,7 @@ public class CodeGen {
 
         this.variables = new HashMap<String, Short>();
         this.varTypes = new HashMap<String, BasicType>();
+        this.arrayDepth = new HashMap<String, Integer>();
 
         method = new VirtualMethod(name, type, arrayDepth);
         method.setStatic(true);
@@ -398,6 +462,7 @@ public class CodeGen {
         }
 
         method.addArg(name, type, arrayDepth);
+        storeArgVariable(name, type, arrayDepth);
     }
 
     public void storeIntVariable(String name, int val) {
@@ -432,6 +497,7 @@ public class CodeGen {
             local = this.method.nextVariable();
             this.variables.put(name, new Short(local));
             this.varTypes.put(name, type);
+            this.arrayDepth.put(name, new Integer(0));
         }
 
         switch ( type ) {
@@ -440,6 +506,63 @@ public class CodeGen {
             case FLOAT: method.addOperation(OPCode.OP_fstore, (byte) local); break;
             case DOUBLE: method.addOperation(OPCode.OP_dstore, (byte) local); break;
             case REF: method.addOperation(OPCode.OP_astore, (byte) local); break;
+            default: return;
+        }
+    }
+
+    public void storeArrayVariable(String name, String _type, int arrayDepth) {
+        if ( method == null ) {
+            System.out.println("Attempted to load a variable while no function was loaded.");
+            return;
+        }
+
+        short local;
+
+        BasicType type = typeFromString(_type);
+
+        if ( this.variables.containsKey(name) ) {
+            local = this.variables.get(name);
+        }
+        else {
+            local = this.method.nextVariable();
+            this.variables.put(name, new Short(local));
+            this.varTypes.put(name, type);
+            this.arrayDepth.put(name, new Integer(arrayDepth));
+        }
+
+        method.addOperation(OPCode.OP_astore, (byte) local);
+    }
+
+    public void startArrayStore(String name, int index) {
+        tmpArrayStore = this.varTypes.get(name);
+        pushVariable(name);
+        pushInteger(index);
+    }
+
+    public void startLastArrayStore(String type) {
+        tmpArrayStore = typeFromString(type);
+    }
+
+    public void endArrayStore() {
+        switch ( tmpArrayStore ) {
+            case INT: method.addOperation(OPCode.OP_iastore); break;
+            case LONG: method.addOperation(OPCode.OP_lastore); break;
+            case FLOAT: method.addOperation(OPCode.OP_fastore); break;
+            case DOUBLE: method.addOperation(OPCode.OP_dastore); break;
+            case REF: method.addOperation(OPCode.OP_aastore); break;
+            default: return;
+        }
+    }
+
+    public void loadFromArray(String _type) {
+        BasicType type = typeFromString(_type);
+
+        switch ( type ) {
+            case INT: method.addOperation(OPCode.OP_iaload); break;
+            case LONG: method.addOperation(OPCode.OP_laload); break;
+            case FLOAT: method.addOperation(OPCode.OP_faload); break;
+            case DOUBLE: method.addOperation(OPCode.OP_daload); break;
+            case REF: method.addOperation(OPCode.OP_aaload); break;
             default: return;
         }
     }
@@ -483,6 +606,20 @@ public class CodeGen {
         short local = (short) (this.method.getVariableCount() - 1);
         this.variables.put(name, new Short(local));
         this.varTypes.put(name, type);
+        this.arrayDepth.put(name, new Integer(0));
+    }
+
+    public void storeArgVariable(String name, String _type, int arrayDepth) {
+        if ( method == null ) {
+            System.out.println("Attempted to load a variable while no function was loaded.");
+            return;
+        }
+
+        BasicType type = typeFromString(_type);
+        short local = (short) (this.method.getVariableCount() - 1);
+        this.variables.put(name, new Short(local));
+        this.varTypes.put(name, type);
+        this.arrayDepth.put(name, new Integer(arrayDepth));
     }
 
     public void startMethodCall(String object, String field, String fieldType, String method, String methodType) {

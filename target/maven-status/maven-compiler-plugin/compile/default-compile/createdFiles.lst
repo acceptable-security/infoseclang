@@ -1,3 +1,4 @@
+infosec/AST/Expression/ArrayDereferenceExpression.class
 infosec/AST/Expression/VariableExpression.class
 infosec/codegen/classfile/constants/Constant.class
 infosec/codegen/classfile/constants/ClassInfoConstant.class
@@ -6,6 +7,7 @@ infosec/AST/Expression/FloatExpression.class
 infosec/codegen/classfile/constants/MethodHandleConstant.class
 infosec/codegen/classfile/attributes/ConstantValueAttribute.class
 infosec/codegen/classfile/constants/MethodRefConstant.class
+infosec/codegen/CodeGen$ArrayType.class
 infosec/AST/Expression/NumberExpression.class
 infosec/lexer/token/SpecialToken.class
 infosec/codegen/classfile/constants/Utf8Constant.class

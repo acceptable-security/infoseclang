@@ -1,5 +1,4 @@
 fun main(argv : string[]) : void {
-    for var i = 0; i < 10; i = i + 1; {
-        print("HI!");
-    }
+    argv[0] = "ahhat";
+    print(argv[0]);
 }
