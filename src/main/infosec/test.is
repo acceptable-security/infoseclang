@@ -1,4 +1,7 @@
-fun main(argv : string[]) : void {
-    argv[0] = "ahhat";
-    print(argv[0]);
+fun main(argv : string[]) {
+    var test = ["test", "butts", "lol", "memes"];
+
+    for var i = 0; i < #test; i++; {
+        print(test[i]);
+    }
 }

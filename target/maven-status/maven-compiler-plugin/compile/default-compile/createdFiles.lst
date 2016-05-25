@@ -1,5 +1,6 @@
 infosec/AST/Expression/ArrayDereferenceExpression.class
 infosec/AST/Expression/VariableExpression.class
+infosec/AST/Expression/ArrayExpression.class
 infosec/codegen/classfile/constants/Constant.class
 infosec/codegen/classfile/constants/ClassInfoConstant.class
 infosec/AST/Statement/VariableDecStatement.class

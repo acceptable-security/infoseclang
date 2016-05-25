@@ -9,7 +9,15 @@ import infosec.AST.Statement.*;
 public class Parser {
     private Lexer lexer;
 
-    public String[][] op_pres = new String[][] {
+    public String[][] op_pres_prefix = new String[][] {
+        new String[] {"--", "++", "#"}
+    };
+
+    public String[][] op_pres_suffix = new String[][] {
+        new String[] {"--", "++"}
+    };
+
+    public String[][] op_pres_infix = new String[][] {
         new String[] {"=", "+=", "-=", "*=", "/=", "&=", "^="},
         new String[] {"<", ">", ">=", "<=", "==", "!=", "||", "&&"},
         new String[] {"+", "-"},
@@ -21,10 +29,34 @@ public class Parser {
         this.lexer = lexer;
     }
 
-    public int getPresidence(String op) {
-        for ( int i = 0; i < op_pres.length; i++ ) {
-            for ( int j = 0; j < op_pres[i].length; j++ ) {
-                if ( op_pres[i][j].equals(op) ) {
+    public int getInfixPresidence(String op) {
+        for ( int i = 0; i < op_pres_infix.length; i++ ) {
+            for ( int j = 0; j < op_pres_infix[i].length; j++ ) {
+                if ( op_pres_infix[i][j].equals(op) ) {
+                    return i;
+                }
+            }
+        }
+
+        return -1;
+    }
+
+    public int getPrefixPresidence(String op) {
+        for ( int i = 0; i < op_pres_prefix.length; i++ ) {
+            for ( int j = 0; j < op_pres_prefix[i].length; j++ ) {
+                if ( op_pres_prefix[i][j].equals(op) ) {
+                    return i;
+                }
+            }
+        }
+
+        return -1;
+    }
+
+    public int getSuffixPresidence(String op) {
+        for ( int i = 0; i < op_pres_suffix.length; i++ ) {
+            for ( int j = 0; j < op_pres_suffix[i].length; j++ ) {
+                if ( op_pres_suffix[i][j].equals(op) ) {
                     return i;
                 }
             }
@@ -41,6 +73,17 @@ public class Parser {
         }
 
         Expression lhs = null;
+        PrefixExpression pfx = null;
+
+        if ( lexer.match("Special") != null ) {
+            String op = ((SpecialToken) lexer.current()).value();
+
+            if ( getPrefixPresidence(op) > -1 ) {
+                pfx = new PrefixExpression(op, null);
+                lexer.next();
+                next = lexer.current();
+            }
+        }
 
         if ( matchSpecial("(") ) {
             lhs = nextExpression(0);
@@ -99,36 +142,73 @@ public class Parser {
                 }
             }
         }
+
         else if ( next.type() == "String" ) {
             lexer.next();
             lhs = new StringExpression(((StringToken) next).value());
         }
+        else if ( matchSpecial("[") ) {
+            ArrayExpression aex = new ArrayExpression();
 
-        while ( lexer.match("Special") != null ) {
+            do {
+                aex.addExpression(nextExpression(0));
+            } while ( matchSpecial(",") );
+
+            lhs = aex;
+
+            if ( !expectSpecial("]") ) {
+                return null;
+            }
+        }
+
+        if ( pfx != null ) {
+            pfx.setRHS(lhs);
+            lhs = pfx;
+        }
+
+
+        if ( lexer.match("Special") != null ) {
             String op = ((SpecialToken) lexer.current()).value();
-            int c_pres = getPresidence(op);
 
-            if ( c_pres != -1 ) {
+            if ( getSuffixPresidence(op) != -1 ) {
                 lexer.next();
+                lhs = new SuffixExpression(op, lhs);
 
-                Expression rhs = nextExpression(c_pres);
+                Token tmp = lexer.current();
 
-                if ( rhs instanceof InfixExpression ) {
-                    InfixExpression a = (InfixExpression) rhs;
+                if ( !(tmp instanceof SpecialToken) ) {
+                    return lhs;
+                }
 
-                    if ( c_pres > getPresidence(a.getOP()) ) {
-                        lhs = (Expression) new InfixExpression(new InfixExpression(lhs, op, a.getLHS()), a.getOP(), a.getRHS());
+                op = ((SpecialToken) tmp).value();
+            }
+
+            while ( lexer.match("Special") != null ) {
+                op = ((SpecialToken) lexer.current()).value();
+                int c_pres = getInfixPresidence(op);
+
+                if ( c_pres != -1 ) {
+                    lexer.next();
+
+                    Expression rhs = nextExpression(c_pres);
+
+                    if ( rhs instanceof InfixExpression ) {
+                        InfixExpression a = (InfixExpression) rhs;
+
+                        if ( c_pres > getInfixPresidence(a.getOP()) ) {
+                            lhs = (Expression) new InfixExpression(new InfixExpression(lhs, op, a.getLHS()), a.getOP(), a.getRHS());
+                        }
+                        else {
+                            lhs = (Expression) new InfixExpression(lhs, op, rhs);
+                        }
                     }
                     else {
                         lhs = (Expression) new InfixExpression(lhs, op, rhs);
                     }
                 }
                 else {
-                    lhs = (Expression) new InfixExpression(lhs, op, rhs);
+                    break;
                 }
-            }
-            else {
-                break;
             }
         }
 
@@ -402,6 +482,9 @@ public class Parser {
                     }
 
                     dec.setRetType(fnRet);
+                }
+                else {
+                    dec.setRetType(new Type("void", 0));
                 }
 
                 dec.setBlock(readBlock());

@@ -27,6 +27,7 @@
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/codegen/classfile/attributes/LineNumberTableAttribute.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/lexer/token/StringToken.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/AST/Statement/WhileStatement.java
+/Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/AST/Expression/ArrayExpression.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/lexer/token/SpecialToken.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/codegen/classfile/constants/MethodHandleConstant.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/codegen/classfile/constants/DoubleConstant.java

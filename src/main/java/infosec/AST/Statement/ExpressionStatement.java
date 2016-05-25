@@ -26,7 +26,7 @@ public class ExpressionStatement extends Statement {
         if ( exp instanceof FunctionCallExpression ) {
             return "fncall";
         }
-        else if ( exp instanceof InfixExpression && isVarDec(((InfixExpression) exp).getOP()) ) {
+        else if (( exp instanceof InfixExpression && isVarDec(((InfixExpression) exp).getOP())) || exp instanceof PrefixExpression || exp instanceof SuffixExpression ) {
             return "varset";
         }
         else {

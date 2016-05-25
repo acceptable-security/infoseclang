@@ -9,6 +9,10 @@ public class PrefixExpression extends Expression {
         this.rhs = rhs;
     }
 
+    public void setRHS(Expression rhs) {
+        this.rhs = rhs;
+    }
+
     public String getOP() {
         return op;
     }

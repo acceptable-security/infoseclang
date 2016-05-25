@@ -172,6 +172,10 @@ public class CodeGen {
         this.method.addOperation(OPCode.OP_aconst_null);
     }
 
+    public void pushArrayLength() {
+        this.method.addOperation(OPCode.OP_arraylength);
+    }
+
     public void pushNewArray(int dimmensions, String type) {
         if ( dimmensions == 1 ) {
             if ( type.equals("bool") ) {
@@ -659,6 +663,14 @@ public class CodeGen {
         return "";
     }
 
+    public int getArrayDepth(String variable) {
+        if ( this.arrayDepth.containsKey(variable) ) {
+            return this.arrayDepth.get(variable).intValue();
+        }
+
+        return -1;
+    }
+
     public String getFunctionType(String function) {
         if ( this.functionType.containsKey(function) ) {
             return this.functionType.get(function);
@@ -728,6 +740,10 @@ public class CodeGen {
     public void returnVariable(String name) {
         pushVariable(name);
         returnVoid();
+    }
+
+    public void dup() {
+        this.method.addOperation(OPCode.OP_dup);
     }
 
     public void end() {
