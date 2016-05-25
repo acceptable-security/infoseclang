@@ -14,6 +14,7 @@ public class VirtualMethod {
     private String ret_type;
     private boolean isPublic = true;
     private boolean isStatic = false;
+    private int totalVariables;
 
     public VirtualMethod(String name, String ret_type) {
         this.block = new VirtualBlock((short) 0);
@@ -42,12 +43,10 @@ public class VirtualMethod {
     }
 
     public void addArg(String name, String type) {
-        this.block.nextVariable();
         this.args.add(new VirtualField(name, type));
     }
 
     public void addArg(String name, String type, int arrayDepth) {
-        this.block.nextVariable();
         this.args.add(new VirtualField(name, type, arrayDepth));
     }
 
@@ -209,6 +208,7 @@ public class VirtualMethod {
     }
 
     public short nextVariable() {
+        totalVariables += 1;
         return this.block.nextVariable();
     }
 
@@ -218,7 +218,7 @@ public class VirtualMethod {
 
     public void compileTo(CodeEmitter codegen) {
         MethodInfo method = new MethodInfo(codegen.utf8(name), codegen.utf8(getDescriptor()));
-        CodeAttribute code = new CodeAttribute(codegen.utf8("Code"), (short) 200, this.block.getVariableCount()); // TODO - Pick less arbitrary numbers
+        CodeAttribute code = new CodeAttribute(codegen.utf8("Code"), (short) 200, (short) this.totalVariables);
         code.setCode(byteCode());
         method.addAttribute(code);
 

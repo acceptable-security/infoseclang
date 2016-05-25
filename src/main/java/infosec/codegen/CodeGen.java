@@ -498,7 +498,9 @@ public class CodeGen {
             local = this.variables.get(name);
         }
         else {
+            System.out.println("going from " + this.method.getVariableCount() + " to...");
             local = this.method.nextVariable();
+            System.out.println("Storing variable: " + this.method.getVariableCount() + " into " + local);
             this.variables.put(name, new Short(local));
             this.varTypes.put(name, type);
             this.arrayDepth.put(name, new Integer(0));
@@ -607,7 +609,8 @@ public class CodeGen {
         }
 
         BasicType type = typeFromString(_type);
-        short local = (short) (this.method.getVariableCount() - 1);
+        short local = this.method.nextVariable();
+        System.out.println("Storing variable: " + this.method.getVariableCount());
         this.variables.put(name, new Short(local));
         this.varTypes.put(name, type);
         this.arrayDepth.put(name, new Integer(0));
@@ -620,7 +623,8 @@ public class CodeGen {
         }
 
         BasicType type = typeFromString(_type);
-        short local = (short) (this.method.getVariableCount() - 1);
+        short local = this.method.nextVariable();
+        System.out.println("Storing variable: " + this.method.getVariableCount());
         this.variables.put(name, new Short(local));
         this.varTypes.put(name, type);
         this.arrayDepth.put(name, new Integer(arrayDepth));

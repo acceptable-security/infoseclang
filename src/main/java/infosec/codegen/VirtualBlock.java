@@ -11,8 +11,9 @@ public class VirtualBlock {
     private short variableCount = 0;
 
     public VirtualBlock(short variableCount) {
+        System.out.println("Starting block with " + variableCount + " variables.");
         this.byteCode = new ArrayList<Byte>();
-        this.variableCount = 0;
+        this.variableCount = variableCount;
     }
 
     public void startBlock() {
@@ -238,6 +239,10 @@ public class VirtualBlock {
     }
 
     public short getVariableCount() {
+        if ( this.internalBlock != null ) {
+            return this.internalBlock.getVariableCount();
+        }
+
         return variableCount;
     }
 }
