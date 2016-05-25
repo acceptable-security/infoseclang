@@ -322,6 +322,27 @@ public class Compiler {
             }
 
             this.codeGen.endCondition();
+
+            if ( ifstmt.getElseBlock() != null ) {
+                if ( expr instanceof InfixExpression ) {
+                    InfixExpression tmp = (InfixExpression) expr;
+                    String a = compileExpression(tmp.getLHS());
+                    String b = compileExpression(tmp.getRHS());
+                    this.codeGen.startCondition(tmp.getOP(), a, false);
+                }
+                else {
+                    String a = compileExpression(expr);
+                    this.codeGen.startCondition("", a, false);
+                }
+
+                Block block2 = ifstmt.getElseBlock();
+
+                for ( int i = 0; i < block2.getStatementCount(); i++ ) {
+                    compileStatement(block2.getStatement(i));
+                }
+
+                this.codeGen.endCondition();
+            }
         }
         else if ( stmt instanceof WhileStatement ) {
             WhileStatement whilestmt = (WhileStatement) stmt;

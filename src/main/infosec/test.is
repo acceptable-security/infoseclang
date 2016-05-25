@@ -4,7 +4,7 @@ fun main(argv : string[]) {
             print(argv[i]);
         }
     }
-    if #argv == 0  {
+    else {
         print("No arguments to report");
     }
 }
