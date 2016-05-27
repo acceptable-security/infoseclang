@@ -25,6 +25,14 @@ public class Parser {
         new String[] {"<<<", "<<", ">>", ">>>", "&", "^", "|"}
     };
 
+    private int debugLevel = 0;
+
+    public void debug(int level, String msg) {
+        if ( level >= debugLevel ) {
+            System.out.println("[DEBUG] " + msg);
+        }
+    }
+
     public Parser(Lexer lexer) {
         this.lexer = lexer;
     }
@@ -142,7 +150,6 @@ public class Parser {
                 }
             }
         }
-
         else if ( next.type() == "String" ) {
             lexer.next();
             lhs = new StringExpression(((StringToken) next).value());
@@ -160,12 +167,28 @@ public class Parser {
                 return null;
             }
         }
+        else if ( matchSpecial("@") ) {
+            String name = "";
+
+            do {
+                String read = readName();
+
+                if ( read.equals("") ) {
+                    break;
+                }
+
+                name += read + "/";
+            } while ( matchSpecial(".") );
+
+            name = name.substring(0, name.length() - 1);
+
+            lhs = new VariableExpression(name);
+        }
 
         if ( pfx != null ) {
             pfx.setRHS(lhs);
             lhs = pfx;
         }
-
 
         if ( lexer.match("Special") != null ) {
             String op = ((SpecialToken) lexer.current()).value();
@@ -313,7 +336,24 @@ public class Parser {
         return true;
     }
 
+    public String readString() {
+        StringToken tkn = (StringToken) lexer.match("String");
+
+        if ( tkn == null ) {
+            return "";
+        }
+
+        lexer.next();
+
+        return tkn.value();
+    }
+
+    public int getCurrentLine() {
+        return lexer.current().getLineNumber();
+    }
+
     public Statement nextStatement() {
+        debug(1, "Reading a statement.");
         Token next = lexer.current();
 
         if ( next instanceof NameToken ) {
@@ -503,6 +543,66 @@ public class Parser {
                 }
 
                 return new ExpressionStatement(exp);
+            }
+        }
+        else if ( next instanceof SpecialToken ) {
+            if ( matchSpecial("@") ) {
+                String name = readName();
+                debug(1, "Reading preprocessor directive.");
+
+                if ( name.equals("jimport") ) {
+                    debug(1, "Java Import directive found.");
+
+                    if ( !expectSpecial("(") ) {
+                        return null;
+                    }
+
+                    String object = readString();
+
+                    if ( !expectSpecial(",") ) {
+                        return null;
+                    }
+
+                    String field = readString();
+
+                    if ( !expectSpecial(":") ) {
+                        return null;
+                    }
+
+                    String fieldType = readString();
+
+                    if ( !expectSpecial(",") ) {
+                        return null;
+                    }
+
+                    String method = readString();
+
+                    if ( !expectSpecial(":") ) {
+                        return null;
+                    }
+
+                    String methodType = readString();
+
+                    if ( !expectSpecial(")") ) {
+                        return null;
+                    }
+
+                    if ( !expectName("as") ) {
+                        return null;
+                    }
+
+                    String newName = readName();
+
+                    if ( !expectSpecial(";") ) {
+                        return null;
+                    }
+
+                    return new JImportStatement(object, field, fieldType, method, methodType, newName);
+                }
+                else {
+                    System.out.println("Invalid preprocessor directive: " + name);
+                    return null;
+                }
             }
         }
 

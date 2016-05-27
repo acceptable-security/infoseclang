@@ -15,6 +15,7 @@ public class Compiler {
     private Parser parser;
     private Lexer lexer;
     private int debugLevel = 1;
+    private HashMap<String, JImportStatement> jImports;
 
     public Compiler(String filename) {
         Path path = Paths.get(filename);
@@ -23,8 +24,7 @@ public class Compiler {
         this.codeGen = new CodeGen(name);
         this.lexer = new Lexer(filename);
         this.parser = new Parser(this.lexer);
-
-        standardFunctions();
+        this.jImports = new HashMap<String, JImportStatement>();
     }
 
     public void debug(int level, String msg) {
@@ -33,16 +33,8 @@ public class Compiler {
         }
     }
 
-    public void standardFunctions() {
-        this.codeGen.startFunction("print", "void");
-        this.codeGen.addFunctionArgument("str", "java/lang/String");
-            this.codeGen.startMethodCall("java/lang/System", "out", "java/io/PrintStream", "println", "(Ljava/lang/String;)V");
-                this.codeGen.pushVariable("str");
-            this.codeGen.endMethodCall();
-        this.codeGen.endFunction();
-    }
-
     public Type locateType(Expression expr) {
+        System.out.println("Getting type of: " + expr);
         if ( expr instanceof NumberExpression ) {
             return new Type("int");
         }
@@ -59,6 +51,12 @@ public class Compiler {
 
             return a;
         }
+        else if ( expr instanceof SuffixExpression ) {
+            return locateType(((SuffixExpression) expr).getLHS());
+        }
+        else if ( expr instanceof PrefixExpression ) {
+            return locateType(((PrefixExpression) expr).getRHS());
+        }
         else if ( expr instanceof VariableExpression ) {
             String name = ((VariableExpression) expr).getName();
             return new Type(this.codeGen.getVariableType(name), this.codeGen.getArrayDepth(name));
@@ -68,7 +66,12 @@ public class Compiler {
             return new Type(this.codeGen.getFunctionType(name));
         }
         else if ( expr instanceof ArrayDereferenceExpression ) {
-            return locateType(((ArrayDereferenceExpression) expr).getLHS());
+            System.out.println("LHS: " + ((ArrayDereferenceExpression) expr).getLHS());
+            Type t = locateType(((ArrayDereferenceExpression) expr).getLHS());
+            System.out.println("Type: " + t);
+            t = new Type(t.getBasicType(), t.getArrayDepth() - 1);
+            System.out.println("New type: " + t);
+            return t;
         }
 
         return null;
@@ -117,13 +120,35 @@ public class Compiler {
         else if ( expr instanceof FunctionCallExpression ) {
             FunctionCallExpression call = (FunctionCallExpression) expr;
 
-            this.codeGen.startFunctionCall(call.getName(), this.codeGen.getFunctionType(call.getName()));
+            debug(1, "Handling function call expression for " + call.getName());
 
-            for ( int i = 0; i < call.getArgCount(); i++ ) {
-                compileExpression(call.getArg(i));
+            System.out.println(this.jImports.toString());
+
+            if ( this.jImports.containsKey(call.getName()) ) {
+                debug(1, "Found jimport " + call.getName());
+                JImportStatement jImp = this.jImports.get(call.getName());
+
+                if ( !jImp.getField().equals("") ) {
+                    this.codeGen.pushStaticField(jImp.getObject(), jImp.getField(), jImp.getFieldType());
+                }
+
+                this.codeGen.startMethodCall(jImp.getFieldType(), jImp.getMethod(), jImp.getMethodType());
+
+                for ( int i = 0; i < call.getArgCount(); i++ ) {
+                    compileExpression(call.getArg(i));
+                }
+
+                this.codeGen.endMethodCall();
             }
+            else {
+                this.codeGen.startFunctionCall(call.getName(), this.codeGen.getFunctionType(call.getName()));
 
-            this.codeGen.endFunctionCall();
+                for ( int i = 0; i < call.getArgCount(); i++ ) {
+                    compileExpression(call.getArg(i));
+                }
+
+                this.codeGen.endFunctionCall();
+            }
         }
         else if ( expr instanceof ArrayDereferenceExpression ) {
             ArrayDereferenceExpression ader = (ArrayDereferenceExpression) expr;
@@ -158,13 +183,30 @@ public class Compiler {
         }
         else if ( expr instanceof PrefixExpression ) {
             PrefixExpression pfx = (PrefixExpression) expr;
-            String type = compileExpression(pfx.getRHS());
 
             if ( pfx.getOP().equals("#") ) {
-                this.codeGen.pushArrayLength();
+                System.out.println("Resovling type of : " + pfx);
+                Type type = locateType(pfx);
+
+                debug(1, "Length operator on type of " + type);
+
+                if ( type.getBasicType().equals("java/lang/String") && type.getArrayDepth() == 0 ) {
+                    debug(1, "Compiling a string length.");
+
+                    this.codeGen.startMethodCall("java/lang/String", "length", "()I");
+                    compileExpression(pfx.getRHS());
+                    this.codeGen.endMethodCall();
+                }
+                else if ( type.getArrayDepth() > 0) {
+                    compileExpression(pfx.getRHS());
+                    this.codeGen.pushArrayLength();
+                }
+
                 return "int";
             }
             else {
+                String type = compileExpression(pfx.getRHS());
+
                 this.codeGen.pushInteger(1);
 
                 if ( pfx.getOP().equals("++") ) {
@@ -177,13 +219,12 @@ public class Compiler {
                 if ( pfx.getRHS() instanceof VariableExpression ) {
                     String var = ((VariableExpression) pfx.getRHS()).getName();
                     this.codeGen.storeLastVariable(var, type);
+                    return type;
                 }
                 else {
                     return "";
                 }
             }
-
-            return type;
         }
         else if ( expr instanceof SuffixExpression ) {
             debug(1, "Compiling suffix expression.");
@@ -370,7 +411,7 @@ public class Compiler {
             this.codeGen.goTo((short) (ip - (this.codeGen.getIP() + 3)));
             this.codeGen.endCondition();
         }
-        else if ( stmt instanceof ForStatement) {
+        else if ( stmt instanceof ForStatement ) {
             debug(1, "Compiling a for loop.");
             ForStatement forstmt = (ForStatement) stmt;
 
@@ -400,6 +441,10 @@ public class Compiler {
             compileStatement(forstmt.getEachStatement());
             this.codeGen.goTo((short) (ip - (this.codeGen.getIP() + 3)));
             this.codeGen.endCondition();
+        }
+        else if ( stmt instanceof JImportStatement ) {
+            JImportStatement jImp = (JImportStatement) stmt;
+            this.jImports.put(jImp.getNewName(), jImp);
         }
     }
 

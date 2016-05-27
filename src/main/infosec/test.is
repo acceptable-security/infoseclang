@@ -1,6 +1,17 @@
+@jimport("java/lang/System", "out" : "java/io/PrintStream", "println" : "(Ljava/lang/String;)V") as print;
+
 fun main(argv : string[]) {
     if #argv > 0 {
         for var i = 0; i < #argv; i++; {
+            var length = #argv[i];
+
+            if length > 5 {
+                print("Argument greater than length 5");
+            }
+            else {
+                print("Argument less than length of 5");
+            }
+
             print(argv[i]);
         }
     }

@@ -4,6 +4,7 @@ infosec/AST/Expression/ArrayExpression.class
 infosec/codegen/classfile/constants/Constant.class
 infosec/codegen/classfile/constants/ClassInfoConstant.class
 infosec/AST/Statement/VariableDecStatement.class
+infosec/AST/Statement/JImportStatement.class
 infosec/AST/Expression/FloatExpression.class
 infosec/codegen/classfile/constants/MethodHandleConstant.class
 infosec/codegen/classfile/attributes/ConstantValueAttribute.class

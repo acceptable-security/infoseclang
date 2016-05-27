@@ -9,6 +9,7 @@ public class Lexer {
     private String numbers = "1234567890";
     private String whiteSpace = " \t\n";
     private String validName = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_";
+    private int currentLine = 0;
     private String[] special = new String[] {
         "+=",
         "-=",
@@ -22,6 +23,9 @@ public class Lexer {
         "||",
         "++",
         "--",
+        "//",
+        "/*",
+        "*/",
         "(",
         ")",
         "[",
@@ -41,6 +45,7 @@ public class Lexer {
         "}",
         ";",
         "&",
+        "@",
         "^",
         "#",
         "|"
@@ -127,6 +132,9 @@ public class Lexer {
         }
 
         while ( isWhiteSpace(c) ) {
+            if ( c.equals("\n") ) {
+                currentLine += 1;
+            }
             c = nextChar();
         }
 
@@ -144,7 +152,9 @@ public class Lexer {
 
             debug("Name \"" + name + "\"");
 
-            return new NameToken(name);
+            Token tkn = new NameToken(name);
+            tkn.setLineNumber(currentLine);
+            return tkn;
         }
         else if ( c.equals("\"") ) {
             String str = "";
@@ -159,7 +169,9 @@ public class Lexer {
 
             debug("String " + str);
 
-            return new StringToken(str);
+            Token tkn = new StringToken(str);
+            tkn.setLineNumber(currentLine);
+            return tkn;
         }
         else if ( isNumber(c) || c.equals("-") ) {
             String nstr = "";
@@ -189,16 +201,22 @@ public class Lexer {
             }
 
             if ( nstr.equals("-") ) {
-                return new SpecialToken(nstr);
+                Token tkn = new SpecialToken(nstr);
+                tkn.setLineNumber(currentLine);
+                return tkn;
             }
 
             if ( nstr.indexOf(".") > -1 ) {
                 debug("Float " + nstr);
-                return new FloatToken(Float.parseFloat(nstr));
+                Token tkn = new FloatToken(Float.parseFloat(nstr));
+                tkn.setLineNumber(currentLine);
+                return tkn;
             }
 
             debug("Integer " + nstr);
-            return new NumberToken(Integer.parseInt(nstr));
+            Token tkn = new NumberToken(Integer.parseInt(nstr));
+            tkn.setLineNumber(currentLine);
+            return tkn;
         }
         else if ( isSpecial(c) ) {
             String s = c;
@@ -216,12 +234,16 @@ public class Lexer {
 
             for ( int i = 0; i < special.length; i++ ) {
                 if ( special[i].equals(s) ) {
-                    return new SpecialToken(s);
+                    Token tkn = new SpecialToken(s);
+                    tkn.setLineNumber(currentLine);
+                    return tkn;
                 }
             }
         }
 
-        return new UnknownToken(c);
+        Token tkn = new UnknownToken(c);
+        tkn.setLineNumber(currentLine);
+        return tkn;
     }
 
     private void advance() {
