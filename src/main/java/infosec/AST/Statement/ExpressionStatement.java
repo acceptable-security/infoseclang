@@ -23,7 +23,7 @@ public class ExpressionStatement extends Statement {
     }
 
     public String getType() {
-        if ( exp instanceof FunctionCallExpression ) {
+        if ( exp instanceof FunctionCallExpression || exp instanceof MethodCallExpression ) {
             return "fncall";
         }
         else if (( exp instanceof InfixExpression && isVarDec(((InfixExpression) exp).getOP())) || exp instanceof PrefixExpression || exp instanceof SuffixExpression ) {

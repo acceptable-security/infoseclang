@@ -13,10 +13,12 @@ infosec/codegen/CodeGen$ArrayType.class
 infosec/AST/Expression/NumberExpression.class
 infosec/lexer/token/SpecialToken.class
 infosec/codegen/classfile/constants/Utf8Constant.class
+infosec/AST/Expression/FieldDereferenceExpression.class
 infosec/codegen/VirtualField.class
 infosec/codegen/classfile/FieldInfo.class
 infosec/codegen/classfile/CodeException.class
 infosec/codegen/classfile/attributes/InnerClassAttribute.class
+infosec/AST/Statement/ClassStatement.class
 infosec/codegen/classfile/MethodInfo.class
 infosec/codegen/classfile/AccessFlags.class
 infosec/AST/Statement/FunctionDecStatement.class
@@ -29,6 +31,7 @@ infosec/codegen/classfile/constants/DoubleConstant.class
 infosec/AST/Block.class
 infosec/codegen/CodeGen$BasicType.class
 infosec/codegen/CodeEmitter.class
+infosec/AST/Expression/MethodCallExpression.class
 infosec/codegen/classfile/InnerClass.class
 infosec/lexer/token/NameToken.class
 infosec/codegen/classfile/constants/IntegerConstant.class
@@ -46,6 +49,7 @@ infosec/codegen/classfile/attributes/Attribute.class
 infosec/codegen/classfile/constants/MethodTypeConstant.class
 infosec/AST/Expression/PrefixExpression.class
 infosec/parser/Parser.class
+infosec/codegen/CodeGen$ContextState.class
 infosec/AST/Expression/InfixExpression.class
 infosec/AST/Statement/ForStatement.class
 infosec/lexer/token/StringToken.class
@@ -65,6 +69,7 @@ infosec/codegen/classfile/constants/NameAndTypeConstant.class
 infosec/InfoSec.class
 infosec/codegen/classfile/constants/FloatConstant.class
 infosec/codegen/classfile/attributes/EnclosingMethodAttribute.class
+infosec/codegen/VirtualClass.class
 infosec/codegen/OPCode.class
 infosec/AST/Statement/Statement.class
 infosec/lexer/token/Token.class

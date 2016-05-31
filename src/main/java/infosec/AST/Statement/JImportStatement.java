@@ -8,15 +8,13 @@ public class JImportStatement extends Statement {
     private String field;
     private String fieldType;
     private String method;
-    private String methodType;
     private String newName;
 
-    public JImportStatement(String object, String field, String fieldType, String method, String methodType, String newName) {
+    public JImportStatement(String object, String field, String fieldType, String method, String newName) {
         this.object = object;
         this.field = field;
         this.fieldType = fieldType;
         this.method = method;
-        this.methodType = methodType;
         this.newName = newName;
     }
 
@@ -36,15 +34,11 @@ public class JImportStatement extends Statement {
         return this.method;
     }
 
-    public String getMethodType() {
-        return this.methodType;
-    }
-
     public String getNewName() {
         return this.newName;
     }
 
     public String toString() {
-        return "@jimport(" + this.object + ", " + this.field + ", " + this.fieldType + ", " + this.method + ", " + this.methodType + ") as " + this.newName +"\n";
+        return "@jimport(" + this.object + ", " + this.field + ", " + this.fieldType + ", " + this.method + ") as " + this.newName +"\n";
     }
 }

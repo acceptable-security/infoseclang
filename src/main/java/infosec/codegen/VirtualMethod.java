@@ -20,9 +20,9 @@ public class VirtualMethod {
         this.block = new VirtualBlock((short) 0);
         this.args = new ArrayList<VirtualField>();
         this.descriptor = "";
-        this.name = name;
+        this.name = name.replace("[", "").replace("]", "");
         this.ret_type = ret_type;
-        this.ret_arrayDepth = 0;
+        this.ret_arrayDepth = name.split("\\[").length - 1;
     }
 
     public VirtualMethod(String name, String ret_type, int ret_arrayDepth) {
@@ -140,6 +140,10 @@ public class VirtualMethod {
 
     public void setStatic(boolean val) {
         this.isStatic = val;
+    }
+
+    public String getReturn() {
+        return ret_type;
     }
 
     private String getReturnType() {

@@ -185,6 +185,39 @@ public class Parser {
             lhs = new VariableExpression(name);
         }
 
+
+        while ( matchSpecial(".") ) {
+            String name = readName();
+
+            if ( matchSpecial("(") ) {
+                MethodCallExpression exp = new MethodCallExpression(lhs, name);
+
+                while ( (lexer.match("Special", ")") == null) && lexer.current() != null ) {
+                    exp.addArg(nextExpression(0));
+
+                    if ( lexer.match("Special", ",") == null && lexer.match("Special", ")") == null ) {
+                        System.out.println("Expected , or ), got " + lexer.current());
+                        return null;
+                    }
+
+                    if ( lexer.match("Special", ")") != null ) {
+                        break;
+                    }
+
+                    lexer.next();
+                }
+
+                lhs = (Expression) exp;
+
+                if ( !expectSpecial(")") ) {
+                    return null;
+                }
+            }
+            else {
+                lhs = new FieldDereferenceExpression(lhs, name);
+            }
+        }
+
         if ( pfx != null ) {
             pfx.setRHS(lhs);
             lhs = pfx;
@@ -531,6 +564,25 @@ public class Parser {
 
                 return dec;
             }
+            else if ( matchName("class") ) {
+                String name = readName();
+
+                if ( name.equals("") ) {
+                    return null;
+                }
+
+                ClassStatement stmt = new ClassStatement(name);
+
+                if ( matchSpecial(":") ) {
+                    do {
+                        stmt.addInheritor(readName());
+                    } while ( matchSpecial(",") );
+                }
+
+                stmt.setBlock(readBlock());
+
+                return stmt;
+            }
             else {
                 Expression exp = nextExpression(0);
 
@@ -546,64 +598,17 @@ public class Parser {
             }
         }
         else if ( next instanceof SpecialToken ) {
-            if ( matchSpecial("@") ) {
-                String name = readName();
-                debug(1, "Reading preprocessor directive.");
+            Expression exp = nextExpression(0);
 
-                if ( name.equals("jimport") ) {
-                    debug(1, "Java Import directive found.");
-
-                    if ( !expectSpecial("(") ) {
-                        return null;
-                    }
-
-                    String object = readString();
-
-                    if ( !expectSpecial(",") ) {
-                        return null;
-                    }
-
-                    String field = readString();
-
-                    if ( !expectSpecial(":") ) {
-                        return null;
-                    }
-
-                    String fieldType = readString();
-
-                    if ( !expectSpecial(",") ) {
-                        return null;
-                    }
-
-                    String method = readString();
-
-                    if ( !expectSpecial(":") ) {
-                        return null;
-                    }
-
-                    String methodType = readString();
-
-                    if ( !expectSpecial(")") ) {
-                        return null;
-                    }
-
-                    if ( !expectName("as") ) {
-                        return null;
-                    }
-
-                    String newName = readName();
-
-                    if ( !expectSpecial(";") ) {
-                        return null;
-                    }
-
-                    return new JImportStatement(object, field, fieldType, method, methodType, newName);
-                }
-                else {
-                    System.out.println("Invalid preprocessor directive: " + name);
-                    return null;
-                }
+            if ( exp == null ) {
+                return null;
             }
+
+            if ( !expectSpecial(";") ) {
+                return null;
+            }
+
+            return new ExpressionStatement(exp);
         }
 
         return null;

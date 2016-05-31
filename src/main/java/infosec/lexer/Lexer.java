@@ -48,7 +48,8 @@ public class Lexer {
         "@",
         "^",
         "#",
-        "|"
+        "|",
+        "."
     };
 
     private FileReader fileReader;

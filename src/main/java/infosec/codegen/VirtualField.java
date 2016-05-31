@@ -7,18 +7,43 @@ import infosec.codegen.classfile.constants.*;
 public class VirtualField {
     private String name;
     private String type;
+    private boolean isStatic;
     private int arrayDepth;
 
     public VirtualField(String name, String type) {
         this.name = name;
         this.type = type;
         this.arrayDepth = 0;
+        this.isStatic = false;
+    }
+
+    public VirtualField(String name, String type, boolean isStatic) {
+        this.name = name;
+        this.type = type;
+        this.arrayDepth = 0;
+        this.isStatic = isStatic;
     }
 
     public VirtualField(String name, String type, int arrayDepth) {
         this.name = name;
         this.type = type;
         this.arrayDepth = arrayDepth;
+        this.isStatic = false;
+    }
+
+    public VirtualField(String name, String type, int arrayDepth, boolean isStatic) {
+        this.name = name;
+        this.type = type;
+        this.arrayDepth = arrayDepth;
+        this.isStatic = isStatic;
+    }
+
+    public boolean isStatic() {
+        return isStatic;
+    }
+
+    public void setStatic(boolean isStatic) {
+        this.isStatic = isStatic;
     }
 
     public String getName() {

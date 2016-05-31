@@ -114,6 +114,23 @@ public class Compiler {
             return lhs;
         }
         else if ( expr instanceof VariableExpression ) {
+            String obj = ((VariableExpression) expr).getName();
+
+            if ( obj.indexOf("/") > -1 ) {
+                debug(1, "Java object detected...");
+                String objType = this.codeGen.getStaticType(obj);
+
+                if ( !objType.equals("") ) {
+                    debug(1, "Static java object field detected!");
+
+                    this.codeGen.pushField(obj.substring(0, obj.lastIndexOf(".")), obj.substring(obj.lastIndexOf(".")), objType);
+                    return objType;
+                }
+                else {
+                    return obj;
+                }
+            }
+
             this.codeGen.pushVariable(((VariableExpression) expr).getName());
             return this.codeGen.getVariableType(((VariableExpression) expr).getName());
         }
@@ -122,33 +139,68 @@ public class Compiler {
 
             debug(1, "Handling function call expression for " + call.getName());
 
-            System.out.println(this.jImports.toString());
+            this.codeGen.startFunctionCall(call.getName(), this.codeGen.getFunctionType(call.getName()));
 
-            if ( this.jImports.containsKey(call.getName()) ) {
-                debug(1, "Found jimport " + call.getName());
-                JImportStatement jImp = this.jImports.get(call.getName());
-
-                if ( !jImp.getField().equals("") ) {
-                    this.codeGen.pushStaticField(jImp.getObject(), jImp.getField(), jImp.getFieldType());
-                }
-
-                this.codeGen.startMethodCall(jImp.getFieldType(), jImp.getMethod(), jImp.getMethodType());
-
-                for ( int i = 0; i < call.getArgCount(); i++ ) {
-                    compileExpression(call.getArg(i));
-                }
-
-                this.codeGen.endMethodCall();
+            for ( int i = 0; i < call.getArgCount(); i++ ) {
+                compileExpression(call.getArg(i));
             }
-            else {
-                this.codeGen.startFunctionCall(call.getName(), this.codeGen.getFunctionType(call.getName()));
 
-                for ( int i = 0; i < call.getArgCount(); i++ ) {
-                    compileExpression(call.getArg(i));
-                }
+            this.codeGen.endFunctionCall();
+        }
+        else if ( expr instanceof MethodCallExpression ) {
+            debug(1, "Compiling a method call expression.");
 
-                this.codeGen.endFunctionCall();
+            MethodCallExpression meth = (MethodCallExpression)(expr);
+
+            Expression lhs = meth.getLHS();
+            String obj = compileExpression(lhs);
+
+            VirtualMethod[] tmps = this.codeGen.getMethod(obj, meth.getName());
+
+            if ( tmps.length < 1 ) {
+                return "";
             }
+
+            String ret = tmps[0].getReturn();
+
+            VirtualMethod tmp = new VirtualMethod("", ret);
+
+            for ( int i = 0; i < meth.getArgCount(); i++ ) {
+                Type t = locateType(meth.getArg(i));
+                tmp.addArg(i + " ", t.getBasicType(), t.getArrayDepth());
+            }
+
+            String desc = tmp.getDescriptor();
+            int found = -1;
+
+            for ( int i = 0; i < tmps.length; i++ ) {
+                if ( tmps[i].getDescriptor().equals(desc) ) {
+                    found = i;
+                    break;
+                }
+            }
+
+            if ( found == -1 ) {
+                System.out.println(meth + " was not declared.");
+                return "";
+            }
+
+            this.codeGen.startMethodCall(obj, meth.getName(), desc);
+
+            for ( int i = 0; i < meth.getArgCount(); i++ ) {
+                compileExpression(meth.getArg(i));
+            }
+
+            this.codeGen.endMethodCall();
+
+            return ret;
+        }
+        else if ( expr instanceof FieldDereferenceExpression ) {
+            FieldDereferenceExpression deref = (FieldDereferenceExpression) expr;
+
+            String type = compileExpression(deref.getLHS());
+
+
         }
         else if ( expr instanceof ArrayDereferenceExpression ) {
             ArrayDereferenceExpression ader = (ArrayDereferenceExpression) expr;

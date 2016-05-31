@@ -6,6 +6,7 @@ import infosec.AST.Statement.*;
 import infosec.codegen.classfile.*;
 import java.util.HashMap;
 import java.util.Stack;
+import java.lang.reflect.*;
 
 public class CodeGen {
     private enum BasicType {
@@ -16,7 +17,33 @@ public class CodeGen {
         FLOAT,
         DOUBLE,
         CHAR,
-        REF
+        REF;
+
+        static BasicType fromString(String type) {
+            if ( type.equals("byte") ) {
+                return BasicType.BYTE;
+            }
+            else if ( type.equals("short") ) {
+                return BasicType.SHORT;
+            }
+            else if ( type.equals("int") ) {
+                return BasicType.INT;
+            }
+            else if ( type.equals("long") ) {
+                return BasicType.LONG;
+            }
+            else if ( type.equals("float") ) {
+                return BasicType.FLOAT;
+            }
+            else if ( type.equals("double") ) {
+                return BasicType.DOUBLE;
+            }
+            else if ( type.equals("char") ) {
+                return BasicType.CHAR;
+            }
+
+            return BasicType.REF;
+        }
     };
 
     public enum ArrayType {
@@ -40,14 +67,77 @@ public class CodeGen {
         }
     };
 
+    private class ContextState {
+        private HashMap<String, Short> variables;
+        private HashMap<String, BasicType> varTypes;
+        private HashMap<String, String> objectClasses;
+        private HashMap<String, Integer> arrayDepth;
+
+
+        public ContextState() {
+            this.variables = new HashMap<String, Short>();
+            this.varTypes = new HashMap<String, BasicType>();
+            this.objectClasses = new HashMap<String, String>();
+            this.arrayDepth = new HashMap<String, Integer>();
+        }
+
+        public void setVariableIndex(String name, short val) {
+            this.variables.put(name, val);
+        }
+
+        public short getVariableIndex(String name) {
+            if ( this.variables.containsKey(name) ) {
+                return this.variables.get(name);
+            }
+
+            return -1;
+        }
+
+        public void setVariableType(String name, BasicType type) {
+            this.varTypes.put(name, type);
+        }
+
+        public BasicType getVariableType(String name) {
+            if ( this.varTypes.containsKey(name) ) {
+                return this.varTypes.get(name);
+            }
+
+            return null;
+        }
+
+        public void setObjectClass(String name, String val) {
+            this.objectClasses.put(name, val);
+        }
+
+        public String getObjectClass(String name) {
+            if ( this.objectClasses.containsKey(name) ) {
+                return this.objectClasses.get(name);
+            }
+
+            return "";
+        }
+
+        public void setArrayDepth(String name, int val) {
+            this.arrayDepth.put(name, val);
+        }
+
+        public int getArrayDepth(String name) {
+            return this.arrayDepth.get(name).intValue();
+        }
+
+        public boolean isVariable(String name) {
+            return this.variables.containsKey(name) && this.varTypes.containsKey(name);
+        }
+    }
+
     private CodeEmitter emitter;
     private VirtualMethod method;
     private String name;
-    private HashMap<String, Short> variables;
-    private HashMap<String, BasicType> varTypes;
-    private HashMap<String, String> objectClasses;
-    private HashMap<String, Integer> arrayDepth;
-    private HashMap<String, String> functionType;
+
+    private ContextState context;
+    private HashMap<String, VirtualClass> classes;
+    private VirtualClass currentClass;
+
     private short currentCallField = -1;
     private short currentCallMethod = -1;
     private short conditionBeforeSize;
@@ -56,10 +146,11 @@ public class CodeGen {
 
     public CodeGen(String name) {
         this.name = name;
-        this.variables = new HashMap<String, Short>();
-        this.varTypes = new HashMap<String, BasicType>();
-        this.functionType = new HashMap<String, String>();
-        this.objectClasses = new HashMap<String, String>();
+
+        this.context = new ContextState();
+        this.classes = new HashMap<String, VirtualClass>();
+        this.javaStatics = new HashMap<String, String>();
+        this.currentClass = new VirtualClass(name);
 
         this.emitter = new CodeEmitter();
         this.emitter.thisClass(name);
@@ -68,32 +159,10 @@ public class CodeGen {
         this.emitter.setPublic(true);
 
         this.tmpOp = new Stack<OPCode>();
-    }
 
-    public BasicType typeFromString(String type) {
-        if ( type.equals("byte") ) {
-            return BasicType.BYTE;
-        }
-        else if ( type.equals("short") ) {
-            return BasicType.SHORT;
-        }
-        else if ( type.equals("int") ) {
-            return BasicType.INT;
-        }
-        else if ( type.equals("long") ) {
-            return BasicType.LONG;
-        }
-        else if ( type.equals("float") ) {
-            return BasicType.FLOAT;
-        }
-        else if ( type.equals("double") ) {
-            return BasicType.DOUBLE;
-        }
-        else if ( type.equals("char") ) {
-            return BasicType.CHAR;
-        }
-
-        return BasicType.REF;
+        loadJavaClass("java.lang.String");
+        loadJavaClass("java.io.PrintStream");
+        loadJavaClass("java.lang.System");
     }
 
     public void pushInteger(int val) {
@@ -133,13 +202,13 @@ public class CodeGen {
             return;
         }
 
-        if ( !this.variables.containsKey(name) || !this.varTypes.containsKey(name) ) {
+        if ( !this.context.isVariable(name) ) {
             return;
         }
 
-        short local = this.variables.get(name);
+        short local = this.context.getVariableIndex(name);
 
-        switch ( this.varTypes.get(name) ) {
+        switch ( this.context.getVariableType(name) ) {
             case INT:
                 if ( local < 4 ) {
                     switch ( local ) {
@@ -209,7 +278,7 @@ public class CodeGen {
             }
         }
         else {
-            if ( typeFromString(type) != BasicType.REF ) {
+            if ( BasicType.fromString(type) != BasicType.REF ) {
                 type = (new VirtualField("", type, dimmensions).toString());
             }
 
@@ -218,7 +287,7 @@ public class CodeGen {
     }
 
     public void operation(String op, String _type) {
-        BasicType type = typeFromString(_type);
+        BasicType type = BasicType.fromString(_type);
 
         if ( op.equals("+") ) {
             switch ( type ) {
@@ -325,7 +394,7 @@ public class CodeGen {
     }
 
     public void startCondition(String op, String _type, boolean flip) {
-        BasicType type = typeFromString(_type);
+        BasicType type = BasicType.fromString(_type);
 
         switch ( type ) {
             case INT:
@@ -379,8 +448,8 @@ public class CodeGen {
     }
 
     public void convert(String _from, String _to) {
-        BasicType from = typeFromString(_from);
-        BasicType to = typeFromString(_to);
+        BasicType from = BasicType.fromString(_from);
+        BasicType to = BasicType.fromString(_to);
 
         if ( from == to ) {
             return;
@@ -429,10 +498,7 @@ public class CodeGen {
             method = null;
         }
 
-        this.variables = new HashMap<String, Short>();
-        this.varTypes = new HashMap<String, BasicType>();
-        this.arrayDepth = new HashMap<String, Integer>();
-        this.objectClasses = new HashMap<String, String>();
+        this.context = new ContextState();
 
         method = new VirtualMethod(name, type);
         method.setStatic(true);
@@ -444,10 +510,7 @@ public class CodeGen {
             method = null;
         }
 
-        this.variables = new HashMap<String, Short>();
-        this.varTypes = new HashMap<String, BasicType>();
-        this.arrayDepth = new HashMap<String, Integer>();
-        this.objectClasses = new HashMap<String, String>();
+        this.context = new ContextState();
 
         method = new VirtualMethod(name, type, arrayDepth);
         method.setStatic(true);
@@ -496,21 +559,20 @@ public class CodeGen {
 
         short local;
 
-        BasicType type = typeFromString(_type);
+        BasicType type = BasicType.fromString(_type);
 
-        if ( this.variables.containsKey(name) ) {
-            local = this.variables.get(name);
+        if ( this.context.isVariable(name) ) {
+            local = this.context.getVariableIndex(name);
         }
         else {
-            System.out.println("going from " + this.method.getVariableCount() + " to...");
             local = this.method.nextVariable();
-            System.out.println("Storing variable: " + this.method.getVariableCount() + " into " + local);
-            this.variables.put(name, new Short(local));
-            this.varTypes.put(name, type);
-            this.arrayDepth.put(name, new Integer(0));
+
+            this.context.setVariableIndex(name, new Short(local));
+            this.context.setVariableType(name, type);
+            this.context.setArrayDepth(name, new Integer(0));
 
             if ( type == BasicType.REF ) {
-                this.objectClasses.put(name, _type);
+                this.context.setObjectClass(name, _type);
             }
         }
 
@@ -532,19 +594,20 @@ public class CodeGen {
 
         short local;
 
-        BasicType type = typeFromString(_type);
+        BasicType type = BasicType.fromString(_type);
 
-        if ( this.variables.containsKey(name) ) {
-            local = this.variables.get(name);
+        if ( this.context.isVariable(name) ) {
+            local = this.context.getVariableIndex(name);
         }
         else {
             local = this.method.nextVariable();
-            this.variables.put(name, new Short(local));
-            this.varTypes.put(name, type);
-            this.arrayDepth.put(name, new Integer(arrayDepth));
+
+            this.context.setVariableIndex(name, new Short(local));
+            this.context.setVariableType(name, type);
+            this.context.setArrayDepth(name, new Integer(0));
 
             if ( type == BasicType.REF ) {
-                this.objectClasses.put(name, _type);
+                this.context.setObjectClass(name, _type);
             }
         }
 
@@ -552,13 +615,13 @@ public class CodeGen {
     }
 
     public void startArrayStore(String name, int index) {
-        tmpArrayStore = this.varTypes.get(name);
+        tmpArrayStore = this.context.getVariableType(name);
         pushVariable(name);
         pushInteger(index);
     }
 
     public void startLastArrayStore(String type) {
-        tmpArrayStore = typeFromString(type);
+        tmpArrayStore = BasicType.fromString(type);
     }
 
     public void endArrayStore() {
@@ -573,7 +636,7 @@ public class CodeGen {
     }
 
     public void loadFromArray(String _type) {
-        BasicType type = typeFromString(_type);
+        BasicType type = BasicType.fromString(_type);
 
         switch ( type ) {
             case INT: method.addOperation(OPCode.OP_iaload); break;
@@ -593,18 +656,20 @@ public class CodeGen {
 
         short local;
 
-        BasicType type = typeFromString(_type);
+        BasicType type = BasicType.fromString(_type);
 
-        if ( this.variables.containsKey(name) ) {
-            local = this.variables.get(name);
+        if ( this.context.isVariable(name) ) {
+            local = this.context.getVariableIndex(name);
         }
         else {
             local = this.method.nextVariable();
-            this.variables.put(name, new Short(local));
-            this.varTypes.put(name, type);
+
+            this.context.setVariableIndex(name, new Short(local));
+            this.context.setVariableType(name, type);
+            this.context.setArrayDepth(name, new Integer(0));
 
             if ( type == BasicType.REF ) {
-                this.objectClasses.put(name, _type);
+                this.context.setObjectClass(name, _type);
             }
         }
 
@@ -624,15 +689,16 @@ public class CodeGen {
             return;
         }
 
-        BasicType type = typeFromString(_type);
+        BasicType type = BasicType.fromString(_type);
         short local = this.method.nextVariable();
-        System.out.println("Storing variable: " + this.method.getVariableCount());
-        this.variables.put(name, new Short(local));
-        this.varTypes.put(name, type);
-        this.arrayDepth.put(name, new Integer(0));
+        local = this.method.nextVariable();
+
+        this.context.setVariableIndex(name, new Short(local));
+        this.context.setVariableType(name, type);
+        this.context.setArrayDepth(name, new Integer(0));
 
         if ( type == BasicType.REF ) {
-            this.objectClasses.put(name, _type);
+            this.context.setObjectClass(name, _type);
         }
     }
 
@@ -642,21 +708,22 @@ public class CodeGen {
             return;
         }
 
-        BasicType type = typeFromString(_type);
+        BasicType type = BasicType.fromString(_type);
         short local = this.method.nextVariable();
-        System.out.println("Storing variable: " + this.method.getVariableCount());
-        this.variables.put(name, new Short(local));
-        this.varTypes.put(name, type);
-        this.arrayDepth.put(name, new Integer(arrayDepth));
+        local = this.method.nextVariable();
+
+        this.context.setVariableIndex(name, new Short(local));
+        this.context.setVariableType(name, type);
+        this.context.setArrayDepth(name, new Integer(arrayDepth));
 
         if ( type == BasicType.REF ) {
-            this.objectClasses.put(name, _type);
+            this.context.setObjectClass(name, _type);
         }
     }
 
     public String getVariableType(String variable) {
-        if ( this.varTypes.containsKey(variable) ) {
-            switch ( this.varTypes.get(variable) ) {
+        if ( this.context.isVariable(variable) ) {
+            switch ( this.context.getVariableType(variable) ) {
                 case BYTE:   return "byte";
                 case SHORT:  return "short";
                 case INT:    return "int";
@@ -664,7 +731,7 @@ public class CodeGen {
                 case FLOAT:  return "float";
                 case DOUBLE: return "double";
                 case CHAR:   return "char";
-                case REF:    return this.objectClasses.get(variable);
+                case REF:    return this.context.getObjectClass(variable);
             }
         }
 
@@ -672,19 +739,40 @@ public class CodeGen {
     }
 
     public int getArrayDepth(String variable) {
-        if ( this.arrayDepth.containsKey(variable) ) {
-            return this.arrayDepth.get(variable).intValue();
+        if ( this.context.isVariable(variable) ) {
+            return this.context.getArrayDepth(variable);
         }
 
         return -1;
     }
 
-    public String getFunctionType(String function) {
-        if ( this.functionType.containsKey(function) ) {
-            return this.functionType.get(function);
+    public String[] getFunctionType(String function) {
+        if ( this.currentClass.getMethodType(function).length > 0 ) {
+            return this.currentClass.getMethodType(function);
         }
 
-        return "";
+        return new String[0];
+    }
+
+    public void loadJavaClass(String name) {
+        this.classes.put(name, VirtualClass.loadFromJava(name));
+    }
+
+    public String[] getMethodType(String object, String method) {
+        if ( this.classes.containsKey(object.replace("/", ".")) ) {
+            return this.classes.get(object.replace("/", ".")).getMethodType(method);
+        }
+
+        return new String[0];
+    }
+
+    public VirtualMethod[] getMethod(String object, String method) {
+        System.out.println("Looking up " + object + " -- " + method);
+        if ( this.classes.containsKey(object.replace("/", ".")) ) {
+            return this.classes.get(object.replace("/", ".")).getMethod(method);
+        }
+
+        return new VirtualMethod[0];
     }
 
     public void startFunctionCall(String method, String methodType) {
@@ -712,6 +800,12 @@ public class CodeGen {
     public void pushField(String object, String field, String type) {
         short id = this.emitter.fieldReference(object, field, new VirtualField(field, type).toString());
         this.method.addOperation(OPCode.OP_getfield, id);
+    }
+
+    public void getFieldType(String object, String field) {
+        if ( javaStatics.containsKey(object) ) {
+
+        }
     }
 
     public void startMethodCall(String object, String method, String methodType) {
