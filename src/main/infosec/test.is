@@ -1,3 +1,13 @@
+fun print(str : string) {
+    (@java.lang.System).out.println(str);
+}
+
+fun print(str : int) {
+    (@java.lang.System).out.println(str);
+}
+
 fun main(argv : string[]) {
-    (@java.lang.System).out.println("test");
+    var test = "test";
+    var blah : int = test.indexOf("e");
+    print(blah);
 }
