@@ -21,7 +21,7 @@ public class VirtualMethod {
         this.args = new ArrayList<VirtualField>();
         this.descriptor = "";
         this.name = name.replace("[", "").replace("]", "");
-        this.ret_type = ret_type;
+        this.ret_type = ret_type.replace(".", "/");
         this.ret_arrayDepth = name.split("\\[").length - 1;
     }
 
@@ -30,7 +30,7 @@ public class VirtualMethod {
         this.args = new ArrayList<VirtualField>();
         this.descriptor = "";
         this.name = name;
-        this.ret_type = ret_type;
+        this.ret_type = ret_type.replace(".", "/");
         this.ret_arrayDepth = ret_arrayDepth;
     }
 

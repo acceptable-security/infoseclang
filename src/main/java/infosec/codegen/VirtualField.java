@@ -12,28 +12,28 @@ public class VirtualField {
 
     public VirtualField(String name, String type) {
         this.name = name;
-        this.type = type;
+        this.type = type.replace(".", "/");
         this.arrayDepth = 0;
         this.isStatic = false;
     }
 
     public VirtualField(String name, String type, boolean isStatic) {
         this.name = name;
-        this.type = type;
+        this.type = type.replace(".", "/");
         this.arrayDepth = 0;
         this.isStatic = isStatic;
     }
 
     public VirtualField(String name, String type, int arrayDepth) {
         this.name = name;
-        this.type = type;
+        this.type = type.replace(".", "/");
         this.arrayDepth = arrayDepth;
         this.isStatic = false;
     }
 
     public VirtualField(String name, String type, int arrayDepth, boolean isStatic) {
         this.name = name;
-        this.type = type;
+        this.type = type.replace(".", "/");
         this.arrayDepth = arrayDepth;
         this.isStatic = isStatic;
     }

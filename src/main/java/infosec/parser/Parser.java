@@ -185,7 +185,6 @@ public class Parser {
             lhs = new VariableExpression(name);
         }
 
-
         while ( matchSpecial(".") ) {
             String name = readName();
 

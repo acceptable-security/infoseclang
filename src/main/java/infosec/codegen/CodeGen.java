@@ -137,6 +137,7 @@ public class CodeGen {
     private ContextState context;
     private HashMap<String, VirtualClass> classes;
     private VirtualClass currentClass;
+    private VirtualClass fileClass;
 
     private short currentCallField = -1;
     private short currentCallMethod = -1;
@@ -149,8 +150,9 @@ public class CodeGen {
 
         this.context = new ContextState();
         this.classes = new HashMap<String, VirtualClass>();
-        this.javaStatics = new HashMap<String, String>();
         this.currentClass = new VirtualClass(name);
+        this.fileClass = this.currentClass;
+        this.classes.put(name, this.currentClass);
 
         this.emitter = new CodeEmitter();
         this.emitter.thisClass(name);
@@ -691,7 +693,6 @@ public class CodeGen {
 
         BasicType type = BasicType.fromString(_type);
         short local = this.method.nextVariable();
-        local = this.method.nextVariable();
 
         this.context.setVariableIndex(name, new Short(local));
         this.context.setVariableType(name, type);
@@ -710,7 +711,6 @@ public class CodeGen {
 
         BasicType type = BasicType.fromString(_type);
         short local = this.method.nextVariable();
-        local = this.method.nextVariable();
 
         this.context.setVariableIndex(name, new Short(local));
         this.context.setVariableType(name, type);
@@ -746,6 +746,14 @@ public class CodeGen {
         return -1;
     }
 
+    public VirtualMethod[] getFunction(String function) {
+        if ( this.currentClass.getMethod(function).length > 0 ) {
+            return this.currentClass.getMethod(function);
+        }
+
+        return new VirtualMethod[0];
+    }
+
     public String[] getFunctionType(String function) {
         if ( this.currentClass.getMethodType(function).length > 0 ) {
             return this.currentClass.getMethodType(function);
@@ -767,7 +775,6 @@ public class CodeGen {
     }
 
     public VirtualMethod[] getMethod(String object, String method) {
-        System.out.println("Looking up " + object + " -- " + method);
         if ( this.classes.containsKey(object.replace("/", ".")) ) {
             return this.classes.get(object.replace("/", ".")).getMethod(method);
         }
@@ -792,20 +799,34 @@ public class CodeGen {
         this.currentCallMethod = -1;
     }
 
-    public void pushStaticField(String object, String field, String type) {
-        short id = this.emitter.fieldReference(object, field, new VirtualField(field, type).toString());
+    public void pushStaticField(String object, String field) {
+        short id = this.emitter.fieldReference(object, field, new VirtualField(field, getField(object, field).getType()).toString());
         this.method.addOperation(OPCode.OP_getstatic, id);
     }
 
-    public void pushField(String object, String field, String type) {
-        short id = this.emitter.fieldReference(object, field, new VirtualField(field, type).toString());
+    public void pushField(String object, String field) {
+        short id = this.emitter.fieldReference(object, field, new VirtualField(field, getField(object, field).getType()).toString());
         this.method.addOperation(OPCode.OP_getfield, id);
     }
 
-    public void getFieldType(String object, String field) {
-        if ( javaStatics.containsKey(object) ) {
+    public String getFieldType(String object, String field) {
+        object = object.replace("/", ".");
 
+        if ( this.classes.containsKey(object) ) {
+            return this.classes.get(object).getField(field).toString();
         }
+
+        return "";
+    }
+
+    public VirtualField getField(String object, String field) {
+        object = object.replace("/", ".");
+
+        if ( this.classes.containsKey(object) ) {
+            return this.classes.get(object).getField(field);
+        }
+
+        return null;
     }
 
     public void startMethodCall(String object, String method, String methodType) {
@@ -829,7 +850,7 @@ public class CodeGen {
     public void endFunction() {
         returnVoid();
         method.compileTo(this.emitter);
-        this.functionType.put(method.getName(), method.getDescriptor());
+        this.currentClass.addMethod(method.getName(), method);
         method = null;
     }
 

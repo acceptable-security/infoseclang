@@ -14,7 +14,7 @@ public class Compiler {
     private CodeGen codeGen;
     private Parser parser;
     private Lexer lexer;
-    private int debugLevel = 1;
+    private int debugLevel = 2;
     private HashMap<String, JImportStatement> jImports;
 
     public Compiler(String filename) {
@@ -34,7 +34,8 @@ public class Compiler {
     }
 
     public Type locateType(Expression expr) {
-        System.out.println("Getting type of: " + expr);
+        debug(2, "Getting type of: " + expr);
+
         if ( expr instanceof NumberExpression ) {
             return new Type("int");
         }
@@ -63,21 +64,19 @@ public class Compiler {
         }
         else if ( expr instanceof FunctionCallExpression ) {
             String name = ((FunctionCallExpression) expr).getName();
-            return new Type(this.codeGen.getFunctionType(name));
+            return new Type(this.codeGen.getFunctionType(name)[0]);
         }
         else if ( expr instanceof ArrayDereferenceExpression ) {
-            System.out.println("LHS: " + ((ArrayDereferenceExpression) expr).getLHS());
             Type t = locateType(((ArrayDereferenceExpression) expr).getLHS());
-            System.out.println("Type: " + t);
-            t = new Type(t.getBasicType(), t.getArrayDepth() - 1);
-            System.out.println("New type: " + t);
-            return t;
+            return new Type(t.getBasicType(), t.getArrayDepth() - 1);
         }
 
         return null;
     }
 
     public String compileExpression(Expression expr) {
+        debug(2, "Compiling expression: " + expr);
+
         if ( expr instanceof NumberExpression ) {
             debug(1, "Compiling a number expression.");
             NumberExpression num = (NumberExpression) expr;
@@ -118,28 +117,49 @@ public class Compiler {
 
             if ( obj.indexOf("/") > -1 ) {
                 debug(1, "Java object detected...");
-                String objType = this.codeGen.getStaticType(obj);
-
-                if ( !objType.equals("") ) {
-                    debug(1, "Static java object field detected!");
-
-                    this.codeGen.pushField(obj.substring(0, obj.lastIndexOf(".")), obj.substring(obj.lastIndexOf(".")), objType);
-                    return objType;
-                }
-                else {
-                    return obj;
-                }
+                return obj.replace("/", ".");
             }
 
             this.codeGen.pushVariable(((VariableExpression) expr).getName());
             return this.codeGen.getVariableType(((VariableExpression) expr).getName());
         }
         else if ( expr instanceof FunctionCallExpression ) {
-            FunctionCallExpression call = (FunctionCallExpression) expr;
+            debug(1, "Compiling a function call expression.");
 
-            debug(1, "Handling function call expression for " + call.getName());
+            FunctionCallExpression call = (FunctionCallExpression)(expr);
 
-            this.codeGen.startFunctionCall(call.getName(), this.codeGen.getFunctionType(call.getName()));
+            String name = call.getName();
+            VirtualMethod[] tmps = this.codeGen.getFunction(name);
+
+            if ( tmps.length < 1 ) {
+                return "";
+            }
+
+            String ret = tmps[0].getReturn();
+
+            VirtualMethod tmp = new VirtualMethod("", ret);
+
+            for ( int i = 0; i < call.getArgCount(); i++ ) {
+                Type t = locateType(call.getArg(i));
+                tmp.addArg(i + " ", t.getBasicType(), t.getArrayDepth());
+            }
+
+            String desc = tmp.getDescriptor();
+            int found = -1;
+
+            for ( int i = 0; i < tmps.length; i++ ) {
+                if ( tmps[i].getDescriptor().equals(desc) ) {
+                    found = i;
+                    break;
+                }
+            }
+
+            if ( found == -1 ) {
+                System.out.println(call + " was not declared.");
+                return "";
+            }
+
+            this.codeGen.startFunctionCall(call.getName(), tmps[found].getDescriptor());
 
             for ( int i = 0; i < call.getArgCount(); i++ ) {
                 compileExpression(call.getArg(i));
@@ -155,6 +175,12 @@ public class Compiler {
             Expression lhs = meth.getLHS();
             String obj = compileExpression(lhs);
 
+            if ( obj.equals("string") ) {
+                obj = "java/lang/String";
+            }
+
+            debug(1, "Searching " + obj + "->" + meth.getName());
+
             VirtualMethod[] tmps = this.codeGen.getMethod(obj, meth.getName());
 
             if ( tmps.length < 1 ) {
@@ -167,7 +193,7 @@ public class Compiler {
 
             for ( int i = 0; i < meth.getArgCount(); i++ ) {
                 Type t = locateType(meth.getArg(i));
-                tmp.addArg(i + " ", t.getBasicType(), t.getArrayDepth());
+                tmp.addArg(i + " ", t.getBasicType().replace("/", "."), t.getArrayDepth());
             }
 
             String desc = tmp.getDescriptor();
@@ -185,7 +211,9 @@ public class Compiler {
                 return "";
             }
 
-            this.codeGen.startMethodCall(obj, meth.getName(), desc);
+            debug(1, "Resolved " + obj + "->" + meth.getName() + " to " + desc);
+
+            this.codeGen.startMethodCall(obj.replace(".", "/"), meth.getName(), desc);
 
             for ( int i = 0; i < meth.getArgCount(); i++ ) {
                 compileExpression(meth.getArg(i));
@@ -196,11 +224,22 @@ public class Compiler {
             return ret;
         }
         else if ( expr instanceof FieldDereferenceExpression ) {
+            debug(1, "Field dereference expression.");
+
             FieldDereferenceExpression deref = (FieldDereferenceExpression) expr;
 
             String type = compileExpression(deref.getLHS());
+            VirtualField field = this.codeGen.getField(type, deref.getName());
+            String type2 = field.getType();
 
+            if ( field.isStatic() ) {
+                this.codeGen.pushStaticField(type.replace(".", "/"), deref.getName());
+            }
+            else {
+                this.codeGen.pushField(type.replace(".", "/"), deref.getName());
+            }
 
+            return type2;
         }
         else if ( expr instanceof ArrayDereferenceExpression ) {
             ArrayDereferenceExpression ader = (ArrayDereferenceExpression) expr;
@@ -237,7 +276,6 @@ public class Compiler {
             PrefixExpression pfx = (PrefixExpression) expr;
 
             if ( pfx.getOP().equals("#") ) {
-                System.out.println("Resovling type of : " + pfx);
                 Type type = locateType(pfx);
 
                 debug(1, "Length operator on type of " + type);
@@ -341,7 +379,6 @@ public class Compiler {
 
             if ( ours.equals("void") ) {
                 ours = type;
-                System.out.println("Resolved type to " + type);
             }
             this.codeGen.storeLastVariable(dec.getName(), ours);
         }
