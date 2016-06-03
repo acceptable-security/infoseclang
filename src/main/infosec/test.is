@@ -1,22 +1,16 @@
+@jimport(@java.lang.System) as Sys
+
 fun print(str : string) {
-    (@java.lang.System).out.println(str);
+    Sys.out.println(str);
 }
 
-fun print(str : int) {
-    (@java.lang.System).out.println(str);
-}
-
-fun pun() : string {
-    return "poop";
-}
-
-fun pun2() : int {
-    return 1;
-}
-
-fun main(argv : string[]) {
-    var test2 = pun();
-    var a = pun2() * 2;
-    print(test2);
-    print(a);
+fun main(args : string[] ) {
+    if #args > 0 {
+        for var i = 0; i < #args; i++ {
+            print(args[i]);
+        }
+    }
+    else {
+        print("No arguments to report.");
+    }
 }

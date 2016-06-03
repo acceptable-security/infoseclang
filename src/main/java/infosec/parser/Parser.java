@@ -152,7 +152,7 @@ public class Parser {
                 }
             }
         }
-        else if ( next.type() == "String" ) {
+        else if ( next.type().equals("String") ) {
             lexer.next();
             lhs = new StringExpression(((StringToken) next).value());
         }
@@ -386,7 +386,7 @@ public class Parser {
         return lexer.current().getLineNumber();
     }
 
-    public Statement nextStatement() {
+    public Statement nextStatement(boolean needsTerminator) {
         debug(1, "Reading a statement.");
         Token next = lexer.current();
 
@@ -432,7 +432,7 @@ public class Parser {
                     }
                 }
 
-                if ( !expectSpecial(";") ) {
+                if ( !expectSpecial(";") && needsTerminator ) {
                     return null;
                 }
 
@@ -454,11 +454,11 @@ public class Parser {
                 Statement initial = nextStatement();
                 Expression condition = nextExpression(0);
 
-                if ( !expectSpecial(";") ) {
+                if ( !expectSpecial(";") && needsTerminator ) {
                     return null;
                 }
 
-                Statement each = nextStatement();
+                Statement each = nextStatement(false);
                 Block block = readBlock();
 
                 return new ForStatement(initial, condition, each, block);
@@ -587,7 +587,7 @@ public class Parser {
             else if ( matchName("return") ) {
                 Expression expr = nextExpression(0);
 
-                if ( !expectSpecial(";") ) {
+                if ( !expectSpecial(";") && needsTerminator ) {
                     return null;
                 }
 
@@ -600,7 +600,7 @@ public class Parser {
                     return null;
                 }
 
-                if ( !expectSpecial(";") ) {
+                if ( !expectSpecial(";") && needsTerminator ) {
                     return null;
                 }
 
@@ -608,13 +608,50 @@ public class Parser {
             }
         }
         else if ( !(lexer.current() instanceof UnknownToken) ) {
+            if ( matchSpecial("@") ) {
+                if ( matchName("jimport") ) {
+                    if ( !matchSpecial("(") ) {
+                        return null;
+                    }
+                    
+                    Expression read = nextExpression(0);
+
+                    if ( !(read instanceof VariableExpression) ) {
+                        System.out.println("A variable expression was required for a JImport.");
+                        return null;
+                    }
+
+                    String var = ((VariableExpression) read).getName();
+
+                    if ( !matchSpecial(")") ) {
+                        return null;
+                    }
+
+                    if ( !matchName("as") ) {
+                        return null;
+                    }
+
+                    String newName = readName();
+
+                    if ( newName.equals("") ) {
+                        return null;
+                    }
+
+                    return new JImportStatement(var, newName);
+                }
+                else {
+                    System.out.println("Invalid preprocessor expression.");
+                    return null;
+                }
+            }
+
             Expression exp = nextExpression(0);
 
             if ( exp == null ) {
                 return null;
             }
 
-            if ( !expectSpecial(";") ) {
+            if ( !expectSpecial(";") && needsTerminator ) {
                 return null;
             }
 
@@ -622,5 +659,9 @@ public class Parser {
         }
 
         return null;
+    }
+
+    public Statement nextStatement() {
+        return nextStatement(true);
     }
 }

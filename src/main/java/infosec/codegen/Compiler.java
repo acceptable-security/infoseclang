@@ -115,6 +115,13 @@ public class Compiler {
         else if ( expr instanceof VariableExpression ) {
             String obj = ((VariableExpression) expr).getName();
 
+            System.out.println(jImports);
+            System.out.println(obj);
+
+            if ( this.jImports.containsKey(obj) ) {
+                return this.jImports.get(obj).getObject().replace("/", ".");
+            }
+
             if ( obj.indexOf("/") > -1 ) {
                 debug(1, "Java object detected...");
                 return obj.replace("/", ".");
@@ -238,6 +245,7 @@ public class Compiler {
             FieldDereferenceExpression deref = (FieldDereferenceExpression) expr;
 
             String type = compileExpression(deref.getLHS());
+
             VirtualField field = this.codeGen.getField(type, deref.getName());
             String type2 = field.getType();
 
