@@ -64,7 +64,7 @@ public class Compiler {
         }
         else if ( expr instanceof FunctionCallExpression ) {
             String name = ((FunctionCallExpression) expr).getName();
-            return new Type(this.codeGen.getFunctionType(name)[0]);
+            return new Type(this.codeGen.getFunction(name)[0].getReturn());
         }
         else if ( expr instanceof ArrayDereferenceExpression ) {
             Type t = locateType(((ArrayDereferenceExpression) expr).getLHS());
@@ -129,6 +129,7 @@ public class Compiler {
             FunctionCallExpression call = (FunctionCallExpression)(expr);
 
             String name = call.getName();
+
             VirtualMethod[] tmps = this.codeGen.getFunction(name);
 
             if ( tmps.length < 1 ) {
@@ -136,6 +137,8 @@ public class Compiler {
             }
 
             String ret = tmps[0].getReturn();
+
+            System.out.println("Return type located: " + ret);
 
             VirtualMethod tmp = new VirtualMethod("", ret);
 
@@ -145,9 +148,13 @@ public class Compiler {
             }
 
             String desc = tmp.getDescriptor();
+
             int found = -1;
 
+            System.out.println("The located descriptor was: " + desc);
+
             for ( int i = 0; i < tmps.length; i++ ) {
+                System.out.println("Checking: " + tmps[i].getDescriptor());
                 if ( tmps[i].getDescriptor().equals(desc) ) {
                     found = i;
                     break;
@@ -166,6 +173,8 @@ public class Compiler {
             }
 
             this.codeGen.endFunctionCall();
+
+            return ret;
         }
         else if ( expr instanceof MethodCallExpression ) {
             debug(1, "Compiling a method call expression.");
@@ -426,7 +435,11 @@ public class Compiler {
             }
             else if ( exprstmt.getType().equals("return") ) {
                 debug(1, "Return expression detected.");
-                compileExpression(exprstmt.getExpression());
+
+                if ( exprstmt.getExpression() != null ) {
+                    compileExpression(exprstmt.getExpression());
+                }
+
                 this.codeGen.returnVoid();
             }
         }

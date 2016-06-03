@@ -6,8 +6,11 @@ fun print(str : int) {
     (@java.lang.System).out.println(str);
 }
 
+fun pun() : string {
+    return "poop";
+}
+
 fun main(argv : string[]) {
-    var test = "test";
-    var blah : int = test.indexOf("e");
-    print(blah);
+    var test2 = pun();
+    print(test2);
 }

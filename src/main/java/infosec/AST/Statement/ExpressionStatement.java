@@ -6,6 +6,7 @@ import java.util.Arrays;
 public class ExpressionStatement extends Statement {
     private String[] var_dec = new String[] { "=", "+=", "-=", "*=", "/=", "&=", "^="};
     private Expression exp;
+    private String override = "";
 
     private boolean isVarDec(String op) {
         System.out.println("Testing operator: " + op);
@@ -22,15 +23,25 @@ public class ExpressionStatement extends Statement {
         this.exp = exp;
     }
 
+    public ExpressionStatement(Expression exp, String override) {
+        this.exp = exp;
+        this.override = override;
+    }
+
     public String getType() {
-        if ( exp instanceof FunctionCallExpression || exp instanceof MethodCallExpression ) {
-            return "fncall";
-        }
-        else if (( exp instanceof InfixExpression && isVarDec(((InfixExpression) exp).getOP())) || exp instanceof PrefixExpression || exp instanceof SuffixExpression ) {
-            return "varset";
+        if ( override.equals("") ) {
+            if ( exp instanceof FunctionCallExpression || exp instanceof MethodCallExpression ) {
+                return "fncall";
+            }
+            else if (( exp instanceof InfixExpression && isVarDec(((InfixExpression) exp).getOP())) || exp instanceof PrefixExpression || exp instanceof SuffixExpression ) {
+                return "varset";
+            }
+            else {
+                return "return";
+            }
         }
         else {
-            return "return";
+            return this.override;
         }
     }
 

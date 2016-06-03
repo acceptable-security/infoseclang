@@ -848,14 +848,25 @@ public class CodeGen {
     }
 
     public void endFunction() {
-        returnVoid();
+        if ( !this.method.hasReturn() ) {
+            returnVoid();
+        }
+
         method.compileTo(this.emitter);
         this.currentClass.addMethod(method.getName(), method);
         method = null;
     }
 
     public void returnVoid() {
-        method.addOperation(OPCode.OP_return);
+        if ( this.method.hasObjectReturn() ) {
+            System.out.println("HAS OBJECT RETURN");
+            method.addOperation(OPCode.OP_areturn);
+        }
+        else {
+            System.out.println("HAS NORMAL RETURN");
+            method.addOperation(OPCode.OP_return);
+        }
+        this.method.setHasReturn(true);
     }
 
     public void returnString(String str) {

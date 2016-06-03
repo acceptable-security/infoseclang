@@ -14,6 +14,7 @@ public class VirtualMethod {
     private String ret_type;
     private boolean isPublic = true;
     private boolean isStatic = false;
+    private boolean hasReturn = false;
     private int totalVariables;
 
     public VirtualMethod(String name, String ret_type) {
@@ -32,6 +33,10 @@ public class VirtualMethod {
         this.name = name;
         this.ret_type = ret_type.replace(".", "/");
         this.ret_arrayDepth = ret_arrayDepth;
+    }
+
+    public boolean hasObjectReturn() {
+        return this.ret_type.indexOf("/") > -1 || this.ret_type.indexOf(".") > -1;
     }
 
     public String getName() {
@@ -220,6 +225,10 @@ public class VirtualMethod {
         return this.block.getVariableCount();
     }
 
+    public boolean hasReturn() {
+        return hasReturn;
+    }
+
     public void compileTo(CodeEmitter codegen) {
         MethodInfo method = new MethodInfo(codegen.utf8(name), codegen.utf8(getDescriptor()));
         CodeAttribute code = new CodeAttribute(codegen.utf8("Code"), (short) 200, (short) this.totalVariables);
@@ -241,5 +250,9 @@ public class VirtualMethod {
         }
 
         codegen.method(method);
+    }
+
+    public void setHasReturn(boolean hasReturn) {
+        this.hasReturn = hasReturn;
     }
 }

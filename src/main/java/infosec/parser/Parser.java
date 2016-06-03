@@ -83,6 +83,8 @@ public class Parser {
         Expression lhs = null;
         PrefixExpression pfx = null;
 
+        System.out.println("Next token: " + lexer.current());
+
         if ( lexer.match("Special") != null ) {
             String op = ((SpecialToken) lexer.current()).value();
 
@@ -582,6 +584,15 @@ public class Parser {
 
                 return stmt;
             }
+            else if ( matchName("return") ) {
+                Expression expr = nextExpression(0);
+
+                if ( !expectSpecial(";") ) {
+                    return null;
+                }
+
+                return new ExpressionStatement(expr, "return");
+            }
             else {
                 Expression exp = nextExpression(0);
 
@@ -596,7 +607,7 @@ public class Parser {
                 return new ExpressionStatement(exp);
             }
         }
-        else if ( next instanceof SpecialToken ) {
+        else if ( !(lexer.current() instanceof UnknownToken) ) {
             Expression exp = nextExpression(0);
 
             if ( exp == null ) {
