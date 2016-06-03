@@ -26,6 +26,7 @@ infosec/AST/Expression/SuffixExpression.class
 infosec/codegen/classfile/attributes/SourceFileAttribute.class
 infosec/lexer/token/FloatToken.class
 infosec/AST/Statement/RangeStatement.class
+infosec/AST/Expression/NewObjectExpression.class
 infosec/codegen/Emitter.class
 infosec/codegen/classfile/constants/DoubleConstant.class
 infosec/AST/Block.class

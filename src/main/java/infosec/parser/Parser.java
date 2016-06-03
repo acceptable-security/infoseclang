@@ -26,10 +26,16 @@ public class Parser {
     };
 
     private int debugLevel = 0;
+    private boolean reachedError = false;
+
+    public void error(String err) {
+        reachedError = true;
+        System.out.println("[ERROR] Line " + lexer.current().getLineNumber() + ": " + err);
+    }
 
     public void debug(int level, String msg) {
-        if ( level >= debugLevel ) {
-            System.out.println("[DEBUG] " + msg);
+        if ( debugLevel >= level ) {
+            System.out.println("[DEBUG] Line " + lexer.current().getLineNumber() + ": " + msg);
         }
     }
 
@@ -74,6 +80,10 @@ public class Parser {
     }
 
     public Expression nextExpression(int pres) {
+        if ( reachedError ) {
+            return null;
+        }
+
         Token next = lexer.current();
 
         if ( next == null ) {
@@ -82,8 +92,6 @@ public class Parser {
 
         Expression lhs = null;
         PrefixExpression pfx = null;
-
-        System.out.println("Next token: " + lexer.current());
 
         if ( lexer.match("Special") != null ) {
             String op = ((SpecialToken) lexer.current()).value();
@@ -103,15 +111,53 @@ public class Parser {
             }
         }
 
-        if ( next.type() == "Number" ) {
+        if ( matchName("new") ) {
+            String obj = readName();
+
+            if ( obj.equals("") ) {
+                error("Objects initializations must be follow by a class name.");
+                return null;
+            }
+
+            NewObjectExpression exp = new NewObjectExpression(obj);
+
+            if ( !matchSpecial("(") ) {
+                return null;
+            }
+
+            while ( (lexer.match("Special", ")") == null) && lexer.current() != null ) {
+                exp.addArg(nextExpression(0));
+
+                if ( lexer.match("Special", ",") == null && lexer.match("Special", ")") == null ) {
+                    error("Expected , or ), got " + lexer.current());
+                    return null;
+                }
+
+                if ( lexer.match("Special", ")") != null ) {
+                    break;
+                }
+
+                lexer.next();
+            }
+
+            lexer.next();
+
+            lhs = (Expression) exp;
+
+            debug(1, "Read a new object: " + lhs);
+
+            next = lexer.current();
+        }
+
+        if ( next.type().equals("Number") ) {
             lexer.next();
             lhs = new NumberExpression(((NumberToken) next).intValue());
         }
-        else if ( next.type() == "Float" ) {
+        else if ( next.type().equals("Float") ) {
             lexer.next();
             lhs = new FloatExpression(((FloatToken) next).floatValue());
         }
-        else if ( next.type() == "Name" ) {
+        else if ( next.type().equals("Name") ) {
             lexer.next();
 
             if ( matchSpecial("(") ) {
@@ -122,7 +168,7 @@ public class Parser {
                     exp.addArg(nextExpression(0));
 
                     if ( lexer.match("Special", ",") == null && lexer.match("Special", ")") == null ) {
-                        System.out.println("Expected , or ), got " + lexer.current());
+                        error("Expected , or ), got " + lexer.current());
                         return null;
                     }
 
@@ -197,7 +243,7 @@ public class Parser {
                     exp.addArg(nextExpression(0));
 
                     if ( lexer.match("Special", ",") == null && lexer.match("Special", ")") == null ) {
-                        System.out.println("Expected , or ), got " + lexer.current());
+                        error("Expected , or ), got " + lexer.current());
                         return null;
                     }
 
@@ -228,6 +274,7 @@ public class Parser {
             String op = ((SpecialToken) lexer.current()).value();
 
             if ( getSuffixPresidence(op) != -1 ) {
+                debug(1, "Parsing a suffix expression!");
                 lexer.next();
                 lhs = new SuffixExpression(op, lhs);
 
@@ -243,6 +290,8 @@ public class Parser {
             while ( lexer.match("Special") != null ) {
                 op = ((SpecialToken) lexer.current()).value();
                 int c_pres = getInfixPresidence(op);
+
+                debug(1, "Checking " + op + " for " + c_pres + " presidence infixity");
 
                 if ( c_pres != -1 ) {
                     lexer.next();
@@ -264,10 +313,12 @@ public class Parser {
                     }
                 }
                 else {
+                    debug(1, "No presidence found! Ending search.");
                     break;
                 }
             }
         }
+
 
         return lhs;
     }
@@ -288,7 +339,7 @@ public class Parser {
         String basicType = readName();
 
         if ( basicType.equals("") ) {
-            System.out.println("Failed to read a name for a type.");
+            error("Failed to read a name for a type.");
             return null;
         }
 
@@ -296,7 +347,7 @@ public class Parser {
 
         while ( matchSpecial("[") ) {
             if ( !expectSpecial("]") ) {
-                System.out.println("Failed to match a [ with a ] in a type.");
+                error("Failed to match a [ with a ] in a type.");
                 return null;
             }
 
@@ -350,7 +401,7 @@ public class Parser {
 
     public boolean expectName(String token) {
         if ( lexer.match("Name", token) == null ) {
-            System.out.println("Expected a Name<" + token + "> but found " + lexer.current());
+            error("Expected a Name<" + token + "> but found " + lexer.current());
             return false;
         }
 
@@ -361,7 +412,7 @@ public class Parser {
 
     public boolean expectSpecial(String token) {
         if ( lexer.match("Special", token) == null ) {
-            System.out.println("Expected a " + token + " but found " + lexer.current());
+            error("Expected a " + token + " but found " + lexer.current());
             return false;
         }
 
@@ -387,6 +438,10 @@ public class Parser {
     }
 
     public Statement nextStatement(boolean needsTerminator) {
+        if ( reachedError ) {
+            return null;
+        }
+
         debug(1, "Reading a statement.");
         Token next = lexer.current();
 
@@ -397,7 +452,7 @@ public class Parser {
                 String name = readName();
 
                 if ( name.equals("") ) {
-                    System.out.println("var must be followed by a name.");
+                    error("var must be followed by a name.");
                     return null;
                 }
 
@@ -421,13 +476,13 @@ public class Parser {
                     value = nextExpression(0);
 
                     if ( value == null ) {
-                        System.out.println("Variable declaration equality must be followed by an expression.");
+                        error("Variable declaration equality must be followed by an expression.");
                         return null;
                     }
                 }
                 else {
                     if ( type.getBasicType().equals("void") ) {
-                        System.out.println("Can't implicitly type a variable without a value.");
+                        error("Can't implicitly type a variable without a value.");
                         return null;
                     }
                 }
@@ -435,6 +490,8 @@ public class Parser {
                 if ( !expectSpecial(";") && needsTerminator ) {
                     return null;
                 }
+
+                debug(1, "Variable declaration of " + name + " to " + value);
 
                 return new VariableDecStatement(name, type, value);
             }
@@ -473,7 +530,7 @@ public class Parser {
                 String variable = readName();
 
                 if ( variable.equals("") ) {
-                    System.out.println("Expected a variable, but got a " + lexer.current());
+                    error("Expected a variable, but got a " + lexer.current());
                     return null;
                 }
 
@@ -484,7 +541,7 @@ public class Parser {
                 Token tkn = lexer.next();
 
                 if ( !tkn.type().equals("Number") ) {
-                    System.out.println("Expected a number, but got a " + tkn);
+                    error("Expected a number, but got a " + tkn);
                     return null;
                 }
 
@@ -497,7 +554,7 @@ public class Parser {
                 tkn = lexer.next();
 
                 if ( !tkn.type().equals("Number") ) {
-                    System.out.println("Expected a number, but got a " + tkn);
+                    error("Expected a number, but got a " + tkn);
                     return null;
                 }
 
@@ -510,7 +567,7 @@ public class Parser {
                 String fnName = readName();
 
                 if ( fnName.equals("") ) {
-                    System.out.println("Expected a name, got a " + lexer.current());
+                    error("Expected a name, got a " + lexer.current());
                     return null;
                 }
 
@@ -613,11 +670,11 @@ public class Parser {
                     if ( !matchSpecial("(") ) {
                         return null;
                     }
-                    
+
                     Expression read = nextExpression(0);
 
                     if ( !(read instanceof VariableExpression) ) {
-                        System.out.println("A variable expression was required for a JImport.");
+                        error("A variable expression was required for a JImport.");
                         return null;
                     }
 
@@ -640,7 +697,7 @@ public class Parser {
                     return new JImportStatement(var, newName);
                 }
                 else {
-                    System.out.println("Invalid preprocessor expression.");
+                    error("Invalid preprocessor expression.");
                     return null;
                 }
             }
@@ -663,5 +720,9 @@ public class Parser {
 
     public Statement nextStatement() {
         return nextStatement(true);
+    }
+
+    public boolean hasError() {
+        return reachedError;
     }
 }

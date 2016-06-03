@@ -60,15 +60,45 @@ public class Compiler {
         }
         else if ( expr instanceof VariableExpression ) {
             String name = ((VariableExpression) expr).getName();
+
+            if ( this.jImports.containsKey(name) ) {
+                return new Type(this.jImports.get(name).getObject().replace("/", "."), 0);
+            }
+
             return new Type(this.codeGen.getVariableType(name), this.codeGen.getArrayDepth(name));
         }
         else if ( expr instanceof FunctionCallExpression ) {
             String name = ((FunctionCallExpression) expr).getName();
             return new Type(this.codeGen.getFunction(name)[0].getReturn());
         }
+        else if ( expr instanceof MethodCallExpression ) {
+            MethodCallExpression call = (MethodCallExpression) expr;
+
+            Expression lhs = call.getLHS();
+            Type type = locateType(lhs);
+
+            VirtualMethod[] tmps = this.codeGen.getMethod(type.getBasicType(), call.getName());
+
+            if ( tmps.length < 1 ) {
+                return null;
+            }
+
+            return new Type(tmps[0].getReturn(), 0);
+        }
         else if ( expr instanceof ArrayDereferenceExpression ) {
             Type t = locateType(((ArrayDereferenceExpression) expr).getLHS());
             return new Type(t.getBasicType(), t.getArrayDepth() - 1);
+        }
+        else if ( expr instanceof NewObjectExpression ) {
+            NewObjectExpression obj = (NewObjectExpression) expr;
+
+            String name = obj.getName();
+
+            if ( jImports.containsKey(name) ) {
+                name = jImports.get(name).getObject();
+            }
+
+            return new Type(name, 0);
         }
 
         return null;
@@ -115,9 +145,6 @@ public class Compiler {
         else if ( expr instanceof VariableExpression ) {
             String obj = ((VariableExpression) expr).getName();
 
-            System.out.println(jImports);
-            System.out.println(obj);
-
             if ( this.jImports.containsKey(obj) ) {
                 return this.jImports.get(obj).getObject().replace("/", ".");
             }
@@ -150,6 +177,7 @@ public class Compiler {
             VirtualMethod tmp = new VirtualMethod("", ret);
 
             for ( int i = 0; i < call.getArgCount(); i++ ) {
+                System.out.println(call.getArg(i));
                 Type t = locateType(call.getArg(i));
                 tmp.addArg(i + " ", t.getBasicType(), t.getArrayDepth());
             }
@@ -244,8 +272,8 @@ public class Compiler {
 
             FieldDereferenceExpression deref = (FieldDereferenceExpression) expr;
 
-            String type = compileExpression(deref.getLHS());
-
+            String type = compileExpression(deref.getLHS()).replace(".", "/");
+            System.out.println(type);
             VirtualField field = this.codeGen.getField(type, deref.getName());
             String type2 = field.getType();
 
@@ -359,10 +387,71 @@ public class Compiler {
 
             return type;
         }
+        else if ( expr instanceof NewObjectExpression ) {
+            debug(1, "Compiling a new object expression.");
+
+            NewObjectExpression call = (NewObjectExpression)(expr);
+
+            String name = call.getName();
+
+            if ( this.jImports.containsKey(name) ) {
+                name = this.jImports.get(name).getObject();
+            }
+
+            System.out.println("Checing " + name + " for <init>");
+
+            VirtualMethod[] tmps = this.codeGen.getMethod(name, "<init>");
+
+            if ( tmps.length < 1 ) {
+                System.out.println("Unable to find any corresponding methods.");
+                return "";
+            }
+
+            String ret = tmps[0].getReturn();
+
+            debug(1, "Return type located: " + ret);
+
+            VirtualMethod tmp = new VirtualMethod("", ret);
+
+            for ( int i = 0; i < call.getArgCount(); i++ ) {
+                Type t = locateType(call.getArg(i));
+                tmp.addArg(i + " ", t.getBasicType(), t.getArrayDepth());
+            }
+
+            String desc = tmp.getDescriptor();
+
+            int found = -1;
+
+            debug(1, "The located descriptor was: " + desc);
+
+            for ( int i = 0; i < tmps.length; i++ ) {
+                if ( tmps[i].getDescriptor().equals(desc) ) {
+                    found = i;
+                    break;
+                }
+            }
+
+            if ( found == -1 ) {
+                System.out.println(call + " was not declared.");
+                return "";
+            }
+
+            this.codeGen.startInitCall(name, tmps[found].getDescriptor());
+
+            for ( int i = 0; i < call.getArgCount(); i++ ) {
+                compileExpression(call.getArg(i));
+            }
+
+            this.codeGen.endInitCall();
+
+            return name;
+        }
         return "";
     }
 
     public void compileStatement(Statement stmt) {
+        debug(2, "Compiling statement: " + stmt);
+
         if ( stmt instanceof FunctionDecStatement ) {
             debug(1, "Compiling a function declaration statement.");
 
@@ -554,6 +643,9 @@ public class Compiler {
         }
         else if ( stmt instanceof JImportStatement ) {
             JImportStatement jImp = (JImportStatement) stmt;
+
+            this.codeGen.loadJavaClass(jImp.getObject().replace("/", "."));
+
             this.jImports.put(jImp.getNewName(), jImp);
         }
     }
@@ -562,6 +654,10 @@ public class Compiler {
         Statement stmt = parser.nextStatement();
 
         while ( stmt != null ) {
+            if ( parser.hasError() ) {
+                return;
+            }
+
             compileStatement(stmt);
             stmt = parser.nextStatement();
         }

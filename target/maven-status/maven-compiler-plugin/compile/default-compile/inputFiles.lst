@@ -70,4 +70,5 @@
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/AST/Expression/FunctionCallExpression.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/codegen/classfile/attributes/Attribute.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/codegen/classfile/constants/ClassInfoConstant.java
+/Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/AST/Expression/NewObjectExpression.java
 /Users/avisaven/Documents/APCompSci/infoseclang/src/main/java/infosec/codegen/classfile/ClassEmitter.java

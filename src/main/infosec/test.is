@@ -1,16 +1,17 @@
+@jimport(@java.lang.String) as String
+@jimport(@java.io.PrintStream) as PrintStream
 @jimport(@java.lang.System) as Sys
+@jimport(@java.lang.Integer) as Int
 
 fun print(str : string) {
     Sys.out.println(str);
 }
 
+fun print(str : int) {
+    Sys.out.println(str);
+}
+
 fun main(args : string[] ) {
-    if #args > 0 {
-        for var i = 0; i < #args; i++ {
-            print(args[i]);
-        }
-    }
-    else {
-        print("No arguments to report.");
-    }
+    var test = new Int(5);
+    print(test.intValue());
 }

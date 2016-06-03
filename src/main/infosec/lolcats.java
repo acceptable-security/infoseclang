@@ -4,7 +4,6 @@ public class lolcats {
     }
 
     public static void main(String[] argv) {
-        int blah = test();
-        System.out.println("Test" + blah);
+        Integer a = new Integer(2);
     }
 }

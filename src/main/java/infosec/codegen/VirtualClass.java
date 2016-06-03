@@ -37,10 +37,12 @@ class VirtualClass {
     public static VirtualClass loadFromJava(String name) {
         Method[] loads;
         Field[] fields;
+        Constructor<?>[] constructors;
 
         try {
-            loads = Class.forName(name).getDeclaredMethods();
+            loads = Class.forName(name).getMethods();
             fields = Class.forName(name).getFields();
+            constructors = Class.forName(name).getConstructors();
         }
         catch ( ClassNotFoundException e ) {
             return null;
@@ -57,6 +59,17 @@ class VirtualClass {
             }
 
             cls.addMethod(loads[i].getName(), vm);
+        }
+
+        for ( int i = 0; i < constructors.length; i++ ) {
+            VirtualMethod vm = new VirtualMethod("<init>", "void");
+            Class<?>[] pType  = constructors[i].getParameterTypes();
+
+            for ( int j = 0; j < pType.length; j++ ) {
+                vm.addArg("", pType[j].getCanonicalName());
+            }
+
+            cls.addMethod("<init>", vm);
         }
 
         for ( int i = 0; i < fields.length; i++ ) {

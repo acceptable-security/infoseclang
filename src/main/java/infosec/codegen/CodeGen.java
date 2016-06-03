@@ -162,9 +162,9 @@ public class CodeGen {
 
         this.tmpOp = new Stack<OPCode>();
 
-        loadJavaClass("java.lang.String");
-        loadJavaClass("java.io.PrintStream");
-        loadJavaClass("java.lang.System");
+        // loadJavaClass("java.lang.String");
+        // loadJavaClass("java.io.PrintStream");
+        // loadJavaClass("java.lang.System");
     }
 
     public void pushInteger(int val) {
@@ -844,7 +844,6 @@ public class CodeGen {
 
         this.method.addOperation(OPCode.OP_invokevirtual, this.currentCallMethod);
         this.currentCallMethod = -1;
-        this.currentCallField = -1;
     }
 
     public void endFunction() {
@@ -891,6 +890,25 @@ public class CodeGen {
     public void returnVariable(String name) {
         pushVariable(name);
         returnVoid();
+    }
+
+    public void startInitCall(String object, String type) {
+        if ( this.currentCallMethod != -1 ) {
+            return;
+        }
+
+        this.method.addOperation(OPCode.OP_new, this.emitter.newClass(object));
+        this.dup();
+        this.currentCallMethod = this.emitter.methodReference(object, "<init>", type);
+    }
+
+    public void endInitCall() {
+        if ( this.currentCallMethod == -1 ) {
+            return;
+        }
+
+        this.method.addOperation(OPCode.OP_invokespecial, this.currentCallMethod);
+        this.currentCallMethod = -1;
     }
 
     public void dup() {
