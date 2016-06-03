@@ -10,7 +10,13 @@ fun pun() : string {
     return "poop";
 }
 
+fun pun2() : int {
+    return 1;
+}
+
 fun main(argv : string[]) {
     var test2 = pun();
+    var a = pun2() * 2;
     print(test2);
+    print(a);
 }

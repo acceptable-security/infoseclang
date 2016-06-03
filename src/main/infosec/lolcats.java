@@ -1,10 +1,10 @@
 public class lolcats {
-    public static String test() {
-        return "test";
+    public static int test() {
+        return 1;
     }
 
     public static void main(String[] argv) {
-        String blah = test();
+        int blah = test();
         System.out.println("Test" + blah);
     }
 }

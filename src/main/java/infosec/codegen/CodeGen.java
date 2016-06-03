@@ -858,15 +858,24 @@ public class CodeGen {
     }
 
     public void returnVoid() {
-        if ( this.method.hasObjectReturn() ) {
-            System.out.println("HAS OBJECT RETURN");
-            method.addOperation(OPCode.OP_areturn);
+        if ( this.method.getReturn().equals("int") ) {
+            method.addOperation(OPCode.OP_ireturn);
         }
-        else {
-            System.out.println("HAS NORMAL RETURN");
+        else if ( this.method.getReturn().equals("float") ) {
+            method.addOperation(OPCode.OP_freturn);
+        }
+        else if ( this.method.getReturn().equals("double") ) {
+            method.addOperation(OPCode.OP_dreturn);
+        }
+        else if ( this.method.getReturn().equals("long") ) {
+            method.addOperation(OPCode.OP_lreturn);
+        }
+        else if ( this.method.getReturn().equals("void") ){
             method.addOperation(OPCode.OP_return);
         }
-        this.method.setHasReturn(true);
+        else {
+            method.addOperation(OPCode.OP_areturn);
+        }
     }
 
     public void returnString(String str) {
