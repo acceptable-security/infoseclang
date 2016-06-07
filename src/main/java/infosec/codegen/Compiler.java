@@ -14,7 +14,7 @@ public class Compiler {
     private CodeGen codeGen;
     private Parser parser;
     private Lexer lexer;
-    private int debugLevel = 2;
+    private int debugLevel = 0;
     private HashMap<String, JImportStatement> jImports;
 
     public Compiler(String filename) {
@@ -164,6 +164,8 @@ public class Compiler {
 
             String name = call.getName();
 
+            debug(1, "Function called: " + name);
+
             VirtualMethod[] tmps = this.codeGen.getFunction(name);
 
             if ( tmps.length < 1 ) {
@@ -172,12 +174,11 @@ public class Compiler {
 
             String ret = tmps[0].getReturn();
 
-            System.out.println("Return type located: " + ret);
+            debug(1, "Return type located: " + ret);
 
             VirtualMethod tmp = new VirtualMethod("", ret);
 
             for ( int i = 0; i < call.getArgCount(); i++ ) {
-                System.out.println(call.getArg(i));
                 Type t = locateType(call.getArg(i));
                 tmp.addArg(i + " ", t.getBasicType(), t.getArrayDepth());
             }
@@ -186,10 +187,10 @@ public class Compiler {
 
             int found = -1;
 
-            System.out.println("The located descriptor was: " + desc);
+            debug(1, "The located descriptor was: " + desc);
 
             for ( int i = 0; i < tmps.length; i++ ) {
-                System.out.println("Checking: " + tmps[i].getDescriptor());
+                debug(1, "Checking: " + tmps[i].getDescriptor());
                 if ( tmps[i].getDescriptor().equals(desc) ) {
                     found = i;
                     break;
@@ -273,7 +274,6 @@ public class Compiler {
             FieldDereferenceExpression deref = (FieldDereferenceExpression) expr;
 
             String type = compileExpression(deref.getLHS()).replace(".", "/");
-            System.out.println(type);
             VirtualField field = this.codeGen.getField(type, deref.getName());
             String type2 = field.getType();
 
@@ -397,8 +397,6 @@ public class Compiler {
             if ( this.jImports.containsKey(name) ) {
                 name = this.jImports.get(name).getObject();
             }
-
-            System.out.println("Checing " + name + " for <init>");
 
             VirtualMethod[] tmps = this.codeGen.getMethod(name, "<init>");
 

@@ -357,8 +357,13 @@ public class Parser {
         return new Type(basicType, arrayDepth);
     }
 
-    public Block readBlock() {
+    public Block readBlock(boolean needsBracket) {
         if ( lexer.match("Special", "{") == null ) {
+            if ( needsBracket ) {
+                error("Failed to read a bracket for a block ");
+                return null;
+            }
+
             return new Block(nextStatement());
         }
 
@@ -487,7 +492,7 @@ public class Parser {
                     }
                 }
 
-                if ( !expectSpecial(";") && needsTerminator ) {
+                if ( !matchSpecial(";") && needsTerminator ) {
                     return null;
                 }
 
@@ -497,12 +502,12 @@ public class Parser {
             }
             else if ( matchName("if") ) {
                 Expression condition = nextExpression(0);
-                Block block = readBlock();
+                Block block = readBlock(false);
                 Block elseBlock = null;
 
                 if ( lexer.match("Name", "else") != null ) {
                     lexer.next();
-                    elseBlock = readBlock();
+                    elseBlock = readBlock(false);
                 }
 
                 return new IfStatement(condition, block, elseBlock);
@@ -511,18 +516,18 @@ public class Parser {
                 Statement initial = nextStatement();
                 Expression condition = nextExpression(0);
 
-                if ( !expectSpecial(";") && needsTerminator ) {
+                if ( !matchSpecial(";") && needsTerminator ) {
                     return null;
                 }
 
                 Statement each = nextStatement(false);
-                Block block = readBlock();
+                Block block = readBlock(false);
 
                 return new ForStatement(initial, condition, each, block);
             }
             else if ( matchName("while") ) {
                 Expression condition = nextExpression(0);
-                Block block = readBlock();
+                Block block = readBlock(false);
 
                 return new WhileStatement(condition, block);
             }
@@ -559,7 +564,7 @@ public class Parser {
                 }
 
                 int end = ((NumberToken) tkn).intValue();
-                Block block = readBlock();
+                Block block = readBlock(false);
 
                 return new RangeStatement(variable, start, end, block);
             }
@@ -618,7 +623,7 @@ public class Parser {
                     dec.setRetType(new Type("void", 0));
                 }
 
-                dec.setBlock(readBlock());
+                dec.setBlock(readBlock(true));
 
                 return dec;
             }
@@ -637,14 +642,14 @@ public class Parser {
                     } while ( matchSpecial(",") );
                 }
 
-                stmt.setBlock(readBlock());
+                stmt.setBlock(readBlock(true));
 
                 return stmt;
             }
             else if ( matchName("return") ) {
                 Expression expr = nextExpression(0);
 
-                if ( !expectSpecial(";") && needsTerminator ) {
+                if ( !matchSpecial(";") && needsTerminator ) {
                     return null;
                 }
 
@@ -657,7 +662,7 @@ public class Parser {
                     return null;
                 }
 
-                if ( !expectSpecial(";") && needsTerminator ) {
+                if ( !matchSpecial(";") && needsTerminator ) {
                     return null;
                 }
 
@@ -708,7 +713,7 @@ public class Parser {
                 return null;
             }
 
-            if ( !expectSpecial(";") && needsTerminator ) {
+            if ( !matchSpecial(";") && needsTerminator ) {
                 return null;
             }
 
@@ -719,7 +724,7 @@ public class Parser {
     }
 
     public Statement nextStatement() {
-        return nextStatement(true);
+        return nextStatement(false);
     }
 
     public boolean hasError() {

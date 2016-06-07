@@ -14,7 +14,7 @@ public abstract class Token {
         return type() + "<" + value() + ">";
     }
 
-    public void setLineNumber(int lintNumber) {
+    public void setLineNumber(int lineNumber) {
         this.lineNumber = lineNumber;
     }
 

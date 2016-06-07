@@ -139,8 +139,7 @@ public class CodeGen {
     private VirtualClass currentClass;
     private VirtualClass fileClass;
 
-    private short currentCallField = -1;
-    private short currentCallMethod = -1;
+    private Stack<Short> currentCallMethod;
     private short conditionBeforeSize;
     private BasicType tmpArrayStore;
     private Stack<OPCode> tmpOp;
@@ -161,7 +160,7 @@ public class CodeGen {
         this.emitter.setPublic(true);
 
         this.tmpOp = new Stack<OPCode>();
-
+        this.currentCallMethod = new Stack<Short>();
         // loadJavaClass("java.lang.String");
         // loadJavaClass("java.io.PrintStream");
         // loadJavaClass("java.lang.System");
@@ -783,20 +782,15 @@ public class CodeGen {
     }
 
     public void startFunctionCall(String method, String methodType) {
-        if ( this.currentCallMethod != -1 ) {
-            return;
-        }
-
-        this.currentCallMethod = this.emitter.methodReference(this.name, method, methodType);
+        this.currentCallMethod.push(this.emitter.methodReference(this.name, method, methodType));
     }
 
     public void endFunctionCall() {
-        if ( this.currentCallMethod == -1 ) {
+        if ( this.currentCallMethod.size() == 0 ) {
             return;
         }
 
-        this.method.addOperation(OPCode.OP_invokestatic, this.currentCallMethod);
-        this.currentCallMethod = -1;
+        this.method.addOperation(OPCode.OP_invokestatic, this.currentCallMethod.pop());
     }
 
     public void pushStaticField(String object, String field) {
@@ -830,20 +824,11 @@ public class CodeGen {
     }
 
     public void startMethodCall(String object, String method, String methodType) {
-        if ( this.currentCallMethod != -1 ) {
-            return;
-        }
-
-        this.currentCallMethod = this.emitter.methodReference(object, method, methodType);
+        this.currentCallMethod.push(this.emitter.methodReference(object, method, methodType));
     }
 
     public void endMethodCall() {
-        if ( this.currentCallMethod == -1 ) {
-            return;
-        }
-
-        this.method.addOperation(OPCode.OP_invokevirtual, this.currentCallMethod);
-        this.currentCallMethod = -1;
+        this.method.addOperation(OPCode.OP_invokevirtual, this.currentCallMethod.pop());
     }
 
     public void endFunction() {
@@ -875,6 +860,8 @@ public class CodeGen {
         else {
             method.addOperation(OPCode.OP_areturn);
         }
+
+        method.setHasReturn(true);
     }
 
     public void returnString(String str) {
@@ -893,22 +880,17 @@ public class CodeGen {
     }
 
     public void startInitCall(String object, String type) {
-        if ( this.currentCallMethod != -1 ) {
-            return;
-        }
-
         this.method.addOperation(OPCode.OP_new, this.emitter.newClass(object));
         this.dup();
-        this.currentCallMethod = this.emitter.methodReference(object, "<init>", type);
+        this.currentCallMethod.push(this.emitter.methodReference(object, "<init>", type));
     }
 
     public void endInitCall() {
-        if ( this.currentCallMethod == -1 ) {
+        if ( this.currentCallMethod.size() == 0 ) {
             return;
         }
 
-        this.method.addOperation(OPCode.OP_invokespecial, this.currentCallMethod);
-        this.currentCallMethod = -1;
+        this.method.addOperation(OPCode.OP_invokespecial, this.currentCallMethod.pop());
     }
 
     public void dup() {
