@@ -5,20 +5,20 @@
 @jimport(@java.lang.StringBuilder) as SB
 
 fun print(str : string) {
-    Sys.out.println(str)
+    Sys.out.println(str);
 }
 
 fun print(str : int) {
-    Sys.out.println(str)
+    Sys.out.println(str);
 }
 
 fun concat(a : string, b : string) : string {
-    var test = new SB()
-    test.append(a)
-    test.append(b)
-    return test.toString()
+    var test = new SB();
+    test.append(a);
+    test.append(b);
+    return test.toString();
 }
 
 fun main(args : string[]) {
-    print(concat("a", "b"))
+    print(concat("a", "b"));
 }

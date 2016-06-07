@@ -14,7 +14,7 @@ public class Compiler {
     private CodeGen codeGen;
     private Parser parser;
     private Lexer lexer;
-    private int debugLevel = 0;
+    private int debugLevel = 2;
     private HashMap<String, JImportStatement> jImports;
 
     public Compiler(String filename) {
@@ -274,6 +274,7 @@ public class Compiler {
             FieldDereferenceExpression deref = (FieldDereferenceExpression) expr;
 
             String type = compileExpression(deref.getLHS()).replace(".", "/");
+            System.out.println(type);
             VirtualField field = this.codeGen.getField(type, deref.getName());
             String type2 = field.getType();
 

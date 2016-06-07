@@ -360,8 +360,7 @@ public class Parser {
     public Block readBlock(boolean needsBracket) {
         if ( lexer.match("Special", "{") == null ) {
             if ( needsBracket ) {
-                error("Failed to read a bracket for a block ");
-                return null;
+                error("Failed to read a bracket for a block");
             }
 
             return new Block(nextStatement());
@@ -492,7 +491,7 @@ public class Parser {
                     }
                 }
 
-                if ( !matchSpecial(";") && needsTerminator ) {
+                if ( !expectSpecial(";") && needsTerminator ) {
                     return null;
                 }
 
@@ -516,7 +515,7 @@ public class Parser {
                 Statement initial = nextStatement();
                 Expression condition = nextExpression(0);
 
-                if ( !matchSpecial(";") && needsTerminator ) {
+                if ( !expectSpecial(";") && needsTerminator ) {
                     return null;
                 }
 
@@ -649,7 +648,7 @@ public class Parser {
             else if ( matchName("return") ) {
                 Expression expr = nextExpression(0);
 
-                if ( !matchSpecial(";") && needsTerminator ) {
+                if ( !expectSpecial(";") && needsTerminator ) {
                     return null;
                 }
 
@@ -662,7 +661,7 @@ public class Parser {
                     return null;
                 }
 
-                if ( !matchSpecial(";") && needsTerminator ) {
+                if ( !expectSpecial(";") && needsTerminator ) {
                     return null;
                 }
 
@@ -713,7 +712,7 @@ public class Parser {
                 return null;
             }
 
-            if ( !matchSpecial(";") && needsTerminator ) {
+            if ( !expectSpecial(";") && needsTerminator ) {
                 return null;
             }
 
@@ -724,7 +723,7 @@ public class Parser {
     }
 
     public Statement nextStatement() {
-        return nextStatement(false);
+        return nextStatement(true);
     }
 
     public boolean hasError() {
